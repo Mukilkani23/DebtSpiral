@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
     twilio_whatsapp_from: str = "whatsapp:+14155238886"
-    demo_whatsapp_to: str = ""
+    demo_whatsapp_to: str = "whatsapp:+919629528495"
     notify_timeout_s: float = 3.0
 
     model_config = {"env_file": ".env", "extra": "ignore"}
