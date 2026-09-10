@@ -11,7 +11,7 @@ export default {
         'accent-light': '#E8F0FE',
         border: '#E8EAED',
         'text-primary': '#1F1F1F',
-        'text-secondary': '#5F6368',
+        'text-secondary': '#0b121b',
         'text-tertiary': '#9AA0A6',
         'risk-low': '#34A853',
         'risk-moderate': '#FBBC04',
