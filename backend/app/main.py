@@ -3,12 +3,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .services.session_store import load_personas
+from .services.scoring import load_model
 from .api import admin, personas, score, transaction, project
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     load_personas(str(settings.resolve_path(settings.personas_path)))
+    model_path = str(settings.resolve_path(settings.model_path))
+    calibrator_path = str(settings.resolve_path(settings.model_path).parent / "calibrator.joblib")
+    load_model(model_path, calibrator_path)
     yield
 
 

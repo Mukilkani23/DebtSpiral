@@ -1,11 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from ..schemas import (
-    ProjectionRequest,
-    ProjectionResponse,
-    ProjectionScenario,
-    CostOfNextDecision,
+    ProjectionRequest, ProjectionResponse,
+    ProjectionScenario, CostOfNextDecision,
 )
 from ..services.session_store import get_persona
+from ..services.projection import project
 
 router = APIRouter()
 
@@ -15,14 +14,13 @@ def project_scenarios(req: ProjectionRequest):
     persona = get_persona(req.persona_id)
     if not persona:
         raise HTTPException(status_code=404, detail="Persona not found")
-    stub_scenario = ProjectionScenario(debt=[0, 0, 0], risk=[0, 0, 0], savings=[0, 0, 0])
+
+    result = project(persona, req.levers.model_dump())
+
     return ProjectionResponse(
-        scenario_a=stub_scenario,
-        scenario_b=stub_scenario,
-        difference_inr={"3": 0, "6": 0, "12": 0},
-        cost_of_next_decision=CostOfNextDecision(
-            lever="discretionary_reduction",
-            delta_per_month_inr=0,
-            debt_avoided_12mo_inr=0,
-        ),
+        horizon_months=result["horizon_months"],
+        scenario_a=ProjectionScenario(**result["scenario_a"]),
+        scenario_b=ProjectionScenario(**result["scenario_b"]),
+        difference_inr=result["difference_inr"],
+        cost_of_next_decision=CostOfNextDecision(**result["cost_of_next_decision"]),
     )
