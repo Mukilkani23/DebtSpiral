@@ -1,0 +1,18 @@
+[
+  "utilization_level",
+  "utilization_trend",
+  "dti_level",
+  "dti_trend",
+  "min_payment_ratio",
+  "min_payment_ratio_trend",
+  "stc_frequency",
+  "stc_amount_ratio",
+  "discretionary_ratio",
+  "income_volatility",
+  "spending_volatility",
+  "repayment_trend",
+  "delta_30d_debt",
+  "delta_90d_debt",
+  "recovery_slope",
+  "absolute_debt_inr"
+]

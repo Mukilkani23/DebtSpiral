@@ -1,0 +1,11 @@
+{
+  "roc_auc": 0.8267,
+  "pr_auc": 0.6097,
+  "brier_score": 0.1401,
+  "precision_at_top_decile": 0.7308,
+  "median_lead_time_months": 2.0,
+  "lead_time_count": 13,
+  "fp_rate_recovering": 0.0462,
+  "test_size": 480,
+  "test_positive_rate": 0.2687
+}
