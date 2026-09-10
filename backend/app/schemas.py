@@ -227,12 +227,14 @@ class AccountAdjustRequest(BaseModel):
 class TierConfigResponse(BaseModel):
     category_tiers: dict[str, int]
     extra_funds_ratios: dict[str, float]
+    category_budgets: dict[str, float] = {}
 
 
 class TierConfigUpdateRequest(BaseModel):
     model_config = {"extra": "forbid"}
     category_tiers: Optional[dict[str, int]] = None
     extra_funds_ratios: Optional[dict[str, float]] = None
+    category_budgets: Optional[dict[str, float]] = None
 
 
 class InsufficientBalanceResponse(BaseModel):

@@ -16,6 +16,7 @@ def update_tier_config(req: TierConfigUpdateRequest):
         updated = tier_config_store.update_config(
             category_tiers=req.category_tiers,
             extra_funds_ratios=req.extra_funds_ratios,
+            category_budgets=req.category_budgets,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

@@ -6,7 +6,7 @@ from ..schemas import HealthResponse, DemoAccountResponse, AccountAdjustRequest
 from ..services.session_store import reset_all, get_all_personas, get_persona
 from ..services.scoring import is_loaded, get_trained_at
 from ..services.notify import reset as reset_notify, send as notify_send
-from ..services import account_store, tier_config_store
+from ..services import account_store, tier_config_store, category_spend_store
 from ..services import allocation as allocation_engine
 from .score import compute_full_score
 
@@ -19,6 +19,7 @@ def reset_demo():
     reset_notify()
     account_store.reset_all()
     tier_config_store.reset()
+    category_spend_store.reset_all()
     return {"status": "ok"}
 
 

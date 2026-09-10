@@ -1,4 +1,5 @@
 import uuid
+import statistics
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 from ..config import settings
@@ -16,6 +17,8 @@ from ..services.rules import evaluate as rules_evaluate
 from ..services.notify import send as notify_send
 from ..services import tier_config_store
 from ..services import account_store
+from ..services import category_spend_store
+from ..services import message_builder
 from .score import _band
 
 router = APIRouter()
@@ -94,18 +97,63 @@ def process_transaction(req: TransactionRequest, background_tasks: BackgroundTas
     updated_persona = persona.model_copy(update={"history": new_history})
     update_persona(updated_persona)
 
+    # Person-specific notification context: derived entirely from this
+    # persona's actual tier config + category spend history — never a
+    # single hardcoded message. Read PRIOR state before recording this
+    # transaction, since is_new_category/anomaly compare against history
+    # that must not include the transaction currently being evaluated.
+    category_budget = tier_config_store.get_budget(req.category.value)
+    prior_spend = category_spend_store.get_spend(req.persona_id, req.category.value)
+    amount_history = category_spend_store.get_amount_history(req.persona_id, req.category.value)
+    is_new_category = category_spend_store.is_new_category(req.persona_id, req.category.value)
+
+    is_amount_anomaly = False
+    if len(amount_history) >= 2:
+        mean = statistics.mean(amount_history)
+        std = statistics.pstdev(amount_history)
+        if std > 0 and req.amount_inr > mean + 2 * std:
+            is_amount_anomaly = True
+
+    spent_after = prior_spend + req.amount_inr
+    overage = max(spent_after - category_budget, 0) if category_budget > 0 else 0
+    remaining = max(category_budget - spent_after, 0) if category_budget > 0 else 0
+
+    notif_context = {
+        "category": req.category.value,
+        "tier": tier,
+        "transaction_amount_inr": req.amount_inr,
+        "allocated_amount_inr": category_budget,
+        "spent_amount_inr": spent_after,
+        "remaining_amount_inr": remaining,
+        "overage_amount_inr": overage,
+        "is_new_category": is_new_category,
+        "is_amount_anomaly": is_amount_anomaly,
+    }
+    notif_result = message_builder.build_message(notif_context)
+    category_spend_store.record(req.persona_id, req.category.value, req.amount_inr)
+
     nudge_resp = None
-    nudge_triggered = rule_result.flagged
+    # A category-budget-specific event (e.g. TIER_BUDGET_EXCEEDED,
+    # UNPLANNED_EXPENSE) is an independent signal from the rule engine's
+    # flagged decision — it can trigger a nudge even when rules.py alone
+    # would not have flagged this transaction.
+    nudge_triggered = rule_result.flagged or notif_result["event_type"] != "GENERIC"
 
     if nudge_triggered:
         nid = str(uuid.uuid4())
-        # Customize the outbound message with the model's top SHAP driver.
-        # This is presentation-only: it never touches reason_codes or the
-        # flagging decision (rules.py stays pure, never imports explain.py).
-        nudge_message = rule_result.nudge_message
-        if shap_data["items"]:
-            top_driver = shap_data["items"][0]["display_name"]
-            nudge_message = f"{nudge_message} Biggest driver: {top_driver}."
+        if notif_result["event_type"] != "GENERIC":
+            # Person-specific, budget-aware message — built from this
+            # persona's actual tier config and category spend, not SHAP.
+            nudge_message = notif_result["message"]
+        else:
+            # Fall back to the existing rule-engine nudge, customized with
+            # the model's top SHAP driver. Presentation-only: never touches
+            # reason_codes or the flagging decision (rules.py stays pure,
+            # never imports explain.py).
+            nudge_message = rule_result.nudge_message
+            if shap_data["items"]:
+                top_driver = shap_data["items"][0]["display_name"]
+                nudge_message = f"{nudge_message} Biggest driver: {top_driver}."
 
         nudge_resp = NudgeResponse(
             nudge_id=nid,

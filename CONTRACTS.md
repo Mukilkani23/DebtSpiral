@@ -444,6 +444,99 @@ path (there is no nudge on that path at all).
 
 ---
 
+## v5.2 Extension — Person-Specific Notification Messages
+
+> Added after the v5.1 balance-protection extension. `TierConfigResponse`
+> gains one additive field (`category_budgets`); no existing field changed.
+
+**Problem solved:** the WhatsApp/nudge message was one fixed template
+regardless of who the persona was or what they spent. It now varies by the
+persona's actual tier config, category budget, and category spend history.
+
+### New service: `services/message_builder.py` (PURE)
+
+`build_message(ctx) -> {"event_type": str, "message": str}`. No I/O, no
+globals, no LLM, no randomness — every number in the output is read from
+the `ctx` dict passed in. This is deliberately separate from `rules.py`:
+`rules.py` decides the frozen `reason_codes` (unchanged, still never
+imports `explain.py`); `message_builder.py` decides only how to phrase a
+notification. **SHAP is not used here** — SHAP still only answers "why is
+this user at risk" (model-level); this answers "what happened with this
+transaction" (event-level), preserving the existing separation.
+
+Event types, checked in this priority order (a budget overage is the most
+specific/actionable signal, so it wins when multiple conditions are true
+on the same transaction):
+
+1. `TIER_BUDGET_EXCEEDED` — `spent_amount_inr > allocated_amount_inr`
+2. `UNPLANNED_EXPENSE` (amount anomaly) — `amount > mean + 2*stdev` of that
+   category's prior amounts for this persona (needs ≥2 prior transactions
+   to compute; skipped otherwise)
+3. `UNPLANNED_EXPENSE` (new category) — this persona has never spent in
+   this category since the last `/reset`
+4. `TIER_BUDGET_NEAR_LIMIT` — `spent_amount_inr > 0.8 * allocated_amount_inr`
+5. `RESTRICTED_SPEND` — `tier == 3` and none of the above applied
+6. `GENERIC` — none applied; caller falls back to the existing rule-engine
+   nudge (SHAP-driver-customized, from the v5.1-era change)
+
+> These are internal event types used only to select notification content —
+> **not** new entries in the frozen `ReasonCode` enum documented earlier in
+> this file. `reason_codes` and `flagged` are entirely unchanged; a
+> category-budget event can trigger `nudge_triggered = true` independently
+> of `rule_result.flagged` (both fields already existed and are
+> independently meaningful in `TransactionResponse`).
+
+### New service: `services/category_spend_store.py`
+
+Tracks, per persona and category, cumulative spend and a list of past
+transaction amounts **since the last `/reset`** — not a real rolling
+60-day window (this codebase has no per-category spend history in
+`persona.history`, which only tracks aggregate `discretionary_spend_inr`).
+This is a deliberate, documented simplification: "new category" means
+"never spent in this category since the last reset," not "no activity in
+trailing 60 real days." Reset via the existing `/reset` handler.
+
+### `tier_config_store.py` extension: `category_budgets`
+
+New field alongside `category_tiers` / `extra_funds_ratios`, same
+load-once/in-memory-mutate/reset-from-baseline pattern. Defaults:
+
+```json
+{
+  "food_delivery": 3000, "shopping": 4000, "entertainment": 1500,
+  "travel": 3000, "electronics": 5000, "subscription": 1000, "other": 2000
+}
+```
+
+`GET /config/tiers` now also returns `category_budgets`. `POST
+/config/tiers` accepts an optional `category_budgets` field (partial
+update, same validation style as the existing fields — non-negative
+amounts only). Changing a category's budget immediately changes the next
+notification's numbers for that category.
+
+### Example (matches the spec's demo scenario exactly)
+
+Persona C, Food Delivery budget ₹3,000, prior spend ₹500 this period,
+new transaction ₹3,000:
+
+```
+🔔 DebtSpiral Alert
+
+You've allocated ₹3,000 for Food Delivery, but you've now spent ₹3,500.
+
+That's ₹500 over your planned limit.
+
+Suggestion:
+Reduce discretionary spending for the rest of this period so your
+spending stays within your plan.
+```
+
+A different persona with a different allocation and spend produces a
+different message — verified in `test_message_builder.py` and
+`test_notification_personalization.py`.
+
+---
+
 ## Module Boundaries
 
 - `api/*` may only import `services/*` and `schemas`

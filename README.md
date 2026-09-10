@@ -139,6 +139,18 @@ account balance, persona history, or trigger any risk scoring, rule
 evaluation, or notification — see [CONTRACTS.md](CONTRACTS.md) for the
 exact response shape.
 
+### Context-aware notifications
+
+DebtSpiral generates notification content from the user's actual tier
+configuration, category budget, and category spend history — not one
+hardcoded message. The same ₹500-over-budget alert reads differently for
+a ₹3,000 Food Delivery allocation than for a ₹30,000 Shopping allocation,
+because the numbers come from `GET /config/tiers` and each persona's own
+spend, not a template string. Changing a category's budget via `POST
+/config/tiers` changes the very next notification for that category. See
+[CONTRACTS.md](CONTRACTS.md)'s "Person-Specific Notification Messages"
+section for the full event-type list and priority order.
+
 ## Model Metrics (Trained)
 
 | Metric | Value |
