@@ -1,4 +1,4 @@
-.PHONY: install install-backend install-frontend data features train api web dev test health reset demo
+.PHONY: install install-backend install-frontend data features label train api web dev test health reset demo
 
 install: install-backend install-frontend
 
@@ -9,13 +9,16 @@ install-frontend:
 	cd frontend && npm install
 
 data:
-	cd ml && python generate_dataset.py
+	python -m ml.generate_dataset
 
 features:
-	cd ml && python build_features.py
+	python -m ml.build_features
+
+label:
+	python -m ml.label
 
 train:
-	cd ml && python train.py
+	python -m ml.train
 
 api:
 	python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
