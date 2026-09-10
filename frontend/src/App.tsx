@@ -15,6 +15,13 @@ import BottomNav from './components/BottomNav';
 import StatusBar from './components/StatusBar';
 import NudgeBanner from './components/NudgeBanner';
 
+async function loadPersona(id: string, loadFromApi: (detail: any, score: any) => void) {
+  try {
+    const detail = await api.getPersona(id);
+    loadFromApi(detail, null);
+  } catch {}
+}
+
 function PhoneContent() {
   const screen = useSession((s) => s.screen);
   switch (screen) {
@@ -39,9 +46,24 @@ function App() {
   const setApiConnected = useSession((s) => s.setApiConnected);
   const nudgeVisible = useSession((s) => s.nudgeVisible);
 
+  const personaId = useSession((s) => s.personaId);
+  const loadFromApi = useSession((s) => s.loadFromApi);
+
   useEffect(() => {
-    api.health().then(() => setApiConnected(true)).catch(() => setApiConnected(false));
+    api.health()
+      .then(() => {
+        setApiConnected(true);
+        return loadPersona(personaId, loadFromApi);
+      })
+      .catch(() => setApiConnected(false));
   }, []);
+
+  useEffect(() => {
+    const { apiConnected } = useSession.getState();
+    if (apiConnected) {
+      loadPersona(personaId, loadFromApi);
+    }
+  }, [personaId]);
 
   return (
     <div className="min-h-screen bg-[#E8EAED] flex items-center justify-center p-4">

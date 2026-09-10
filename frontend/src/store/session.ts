@@ -130,9 +130,14 @@ interface SessionState {
   tierManageFilter: TierLevel;
   setTierManageFilter: (t: TierLevel) => void;
 
+  // Persona history (from API)
+  personaHistory: any[];
+  setPersonaHistory: (h: any[]) => void;
+
   // Actions
   updateRisk: (score: number, band: string, codes: any[], nudge: any) => void;
   resetDemo: () => void;
+  loadFromApi: (personaDetail: any, scoreData: any) => void;
 
   // Contacts
   contacts: Contact[];
@@ -163,8 +168,6 @@ const DEFAULT_CONTACTS: Contact[] = [
   { id: 'apollo', name: 'Apollo Pharmacy', avatar: '💊', defaultCategory: 'medical', defaultTier: 1 },
 ];
 
-const INITIAL_RISK = 87;
-
 export const useSession = create<SessionState>((set, get) => ({
   screen: 'home',
   prevScreen: 'home',
@@ -193,24 +196,14 @@ export const useSession = create<SessionState>((set, get) => ({
   bankBalance: 50000,
   creditLimit: 120000,
 
-  riskScore: INITIAL_RISK,
-  riskBand: 'HIGH',
-  spiralDetected: true,
-  modelWarnedMonth: 5,
-  spiralConfirmedMonth: 8,
-  leadTimeMonths: 3.0,
+  riskScore: 0,
+  riskBand: 'LOW',
+  spiralDetected: false,
+  modelWarnedMonth: null,
+  spiralConfirmedMonth: null,
+  leadTimeMonths: null,
 
-  shap: {
-    base_value: 0.25,
-    items: [
-      { feature: 'utilization_trend', display_name: 'Credit utilization climbing', value: 0.062, shap: 0.14, direction: '+' },
-      { feature: 'min_payment_ratio_trend', display_name: 'Repayment discipline eroding', value: -0.031, shap: 0.11, direction: '+' },
-      { feature: 'dti_trend', display_name: 'Debt-to-income growing', value: 0.045, shap: 0.09, direction: '+' },
-      { feature: 'stc_frequency', display_name: 'Short-term borrowing increasing', value: 0.5, shap: 0.07, direction: '+' },
-      { feature: 'recovery_slope', display_name: 'Recovery capacity shrinking', value: -0.02, shap: 0.06, direction: '+' },
-      { feature: 'absolute_debt_inr', display_name: 'Outstanding debt level', value: 82000, shap: 0.01, direction: '+' },
-    ],
-  },
+  shap: null,
 
   reasonCodes: [],
   nudge: null,
@@ -271,6 +264,9 @@ export const useSession = create<SessionState>((set, get) => ({
   tierManageFilter: 1,
   setTierManageFilter: (t) => set({ tierManageFilter: t }),
 
+  personaHistory: [],
+  setPersonaHistory: (h) => set({ personaHistory: h }),
+
   updateRisk: (score, band, codes, nudge) =>
     set({
       riskScore: score,
@@ -282,8 +278,13 @@ export const useSession = create<SessionState>((set, get) => ({
 
   resetDemo: () =>
     set({
-      riskScore: INITIAL_RISK,
-      riskBand: 'HIGH',
+      riskScore: 0,
+      riskBand: 'LOW',
+      spiralDetected: false,
+      modelWarnedMonth: null,
+      spiralConfirmedMonth: null,
+      leadTimeMonths: null,
+      shap: null,
       reasonCodes: [],
       nudge: null,
       nudgeVisible: false,
@@ -295,7 +296,28 @@ export const useSession = create<SessionState>((set, get) => ({
       bankBalance: 50000,
       payResult: null,
       payButtonState: 'safe',
+      personaHistory: [],
+      projection: null,
+      whatIfReduction: 0,
     }),
+
+  loadFromApi: (personaDetail, scoreData) => {
+    const persona = personaDetail.persona;
+    const assessment = personaDetail.assessment || scoreData;
+    set({
+      monthlyIncome: persona.monthly_income_inr,
+      creditLimit: persona.credit_limit_inr,
+      bankBalance: persona.monthly_income_inr,
+      riskScore: assessment.risk_score,
+      riskBand: assessment.band,
+      spiralDetected: assessment.spiral_detected,
+      modelWarnedMonth: assessment.model_warned_month,
+      spiralConfirmedMonth: assessment.spiral_confirmed_month,
+      leadTimeMonths: assessment.lead_time_months,
+      shap: personaDetail.shap || scoreData?.shap || null,
+      personaHistory: persona.history || [],
+    });
+  },
 
   contacts: DEFAULT_CONTACTS,
 }));

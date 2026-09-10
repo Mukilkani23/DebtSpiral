@@ -62,6 +62,12 @@ export default function PayConfirmScreen() {
         newRisk = result.risk_after ?? result.risk_score ?? riskScore + (payTier === 3 ? 4 : 1);
         reasonCodes = result.reason_codes || [];
         nudge = result.nudge || null;
+        if (result.shap) {
+          useSession.setState({ shap: result.shap });
+        }
+        if (result.spiral_detected !== undefined) {
+          useSession.setState({ spiralDetected: result.spiral_detected });
+        }
       }
     } catch {}
 

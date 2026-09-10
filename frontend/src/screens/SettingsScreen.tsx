@@ -1,19 +1,62 @@
+import { useEffect, useState } from 'react';
 import { useSession } from '../store/session';
+import { api } from '../api/client';
 
-const PERSONAS = [
-  { id: 'A', label: 'Steady Eddie', desc: 'Healthy, stable finances', risk: 'LOW' },
-  { id: 'B', label: 'High Roller', desc: 'High income, poor discipline', risk: 'HIGH' },
-  { id: 'C', label: 'Rising Pressure', desc: '₹50K/mo, deteriorating trajectory', risk: 'HIGH' },
-  { id: 'D', label: 'Variable Income', desc: 'Gig worker, inconsistent cash flow', risk: 'MODERATE' },
-  { id: 'E', label: 'Recovering', desc: 'High debt but improving trajectory', risk: 'LOW' },
+interface PersonaInfo {
+  id: string;
+  label: string;
+  desc: string;
+  risk: string;
+  isLive: boolean;
+}
+
+const FALLBACK_PERSONAS: PersonaInfo[] = [
+  { id: 'A', label: 'Steady Eddie', desc: 'Healthy, stable finances', risk: 'LOW', isLive: false },
+  { id: 'B', label: 'High Roller', desc: 'High income, poor discipline', risk: 'HIGH', isLive: false },
+  { id: 'C', label: 'Rising Pressure', desc: '₹50K/mo, deteriorating trajectory', risk: 'HIGH', isLive: true },
+  { id: 'D', label: 'Variable Income', desc: 'Gig worker, inconsistent cash flow', risk: 'MODERATE', isLive: false },
+  { id: 'E', label: 'Recovering', desc: 'High debt but improving trajectory', risk: 'LOW', isLive: false },
 ];
+
+function bandFromScore(s: number) {
+  if (s >= 70) return 'HIGH';
+  if (s >= 50) return 'ELEVATED';
+  if (s >= 30) return 'MODERATE';
+  return 'LOW';
+}
 
 export default function SettingsScreen() {
   const personaId = useSession((s) => s.personaId);
   const setPersonaId = useSession((s) => s.setPersonaId);
   const setScreen = useSession((s) => s.setScreen);
   const resetDemo = useSession((s) => s.resetDemo);
+  const loadFromApi = useSession((s) => s.loadFromApi);
   const apiConnected = useSession((s) => s.apiConnected);
+  const [personas, setPersonas] = useState<PersonaInfo[]>(FALLBACK_PERSONAS);
+
+  useEffect(() => {
+    if (!apiConnected) return;
+    api.getPersonas().then((list: any[]) => {
+      setPersonas(list.map((p) => ({
+        id: p.persona_id,
+        label: p.label,
+        desc: p.narrative,
+        risk: bandFromScore(p.current_risk_score),
+        isLive: p.is_live,
+      })));
+    }).catch(() => {});
+  }, [apiConnected]);
+
+  const handleReset = async () => {
+    resetDemo();
+    if (apiConnected) {
+      try {
+        await api.reset();
+        const detail = await api.getPersona(personaId);
+        loadFromApi(detail, null);
+      } catch {}
+    }
+  };
 
   return (
     <div className="px-5 pt-[50px] pb-6 bg-white">
@@ -45,7 +88,7 @@ export default function SettingsScreen() {
       <div className="mb-6">
         <p className="text-[11px] text-text-secondary uppercase tracking-wider mb-2">Switch Persona</p>
         <div className="space-y-1.5">
-          {PERSONAS.map((p) => (
+          {personas.map((p) => (
             <button key={p.id} onClick={() => setPersonaId(p.id)}
               className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors ${
                 p.id === personaId ? 'bg-accent-light border-accent' : 'bg-white border-border shadow-gpay'
@@ -55,15 +98,15 @@ export default function SettingsScreen() {
               }`}>{p.id}</div>
               <div className="flex-1 text-left">
                 <p className="text-[12px] font-medium text-text-primary">{p.label}</p>
-                <p className="text-[10px] text-text-secondary">{p.desc}</p>
+                <p className="text-[10px] text-text-secondary truncate max-w-[200px]">{p.desc}</p>
               </div>
-              {p.id === 'C' && <span className="text-[9px] bg-accent-light text-accent px-2 py-0.5 rounded-md font-bold">LIVE</span>}
+              {p.isLive && <span className="text-[9px] bg-accent-light text-accent px-2 py-0.5 rounded-md font-bold">LIVE</span>}
             </button>
           ))}
         </div>
       </div>
 
-      <button onClick={resetDemo}
+      <button onClick={handleReset}
         className="w-full bg-red-50 border border-red-200 py-3 rounded-xl text-risk-high font-semibold text-[13px]">
         Reset Demo Data
       </button>

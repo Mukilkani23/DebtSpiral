@@ -1,23 +1,10 @@
+import { useEffect, useCallback, useRef } from 'react';
 import { useSession } from '../store/session';
+import { api } from '../api/client';
 import BackHeader from '../components/BackHeader';
 import SpiralGauge from '../components/SpiralGauge';
 
 function fmt(n: number) { return n.toLocaleString('en-IN'); }
-
-const TRAJECTORY = [
-  { month: 1, score: 22, debt: 35000 },
-  { month: 2, score: 28, debt: 39000 },
-  { month: 3, score: 34, debt: 44000 },
-  { month: 4, score: 41, debt: 50000 },
-  { month: 5, score: 49, debt: 58000 },
-  { month: 6, score: 56, debt: 64000 },
-  { month: 7, score: 63, debt: 71000 },
-  { month: 8, score: 72, debt: 78000 },
-  { month: 9, score: 78, debt: 82000 },
-  { month: 10, score: 82, debt: 86000 },
-  { month: 11, score: 85, debt: 90000 },
-  { month: 12, score: 87, debt: 94000 },
-];
 
 function barColor(v: number) {
   if (v >= 70) return '#EA4335';
@@ -31,23 +18,60 @@ export default function DebtSpiralScreen() {
   const riskBand = useSession((s) => s.riskBand);
   const shap = useSession((s) => s.shap);
   const spiralDetected = useSession((s) => s.spiralDetected);
-  const modelWarnedMonth = useSession((s) => s.modelWarnedMonth) || 5;
-  const spiralConfirmedMonth = useSession((s) => s.spiralConfirmedMonth) || 8;
+  const modelWarnedMonth = useSession((s) => s.modelWarnedMonth);
+  const spiralConfirmedMonth = useSession((s) => s.spiralConfirmedMonth);
   const leadTimeMonths = useSession((s) => s.leadTimeMonths);
   const whatIfReduction = useSession((s) => s.whatIfReduction);
   const setWhatIfReduction = useSession((s) => s.setWhatIfReduction);
   const reasonCodes = useSession((s) => s.reasonCodes);
+  const personaId = useSession((s) => s.personaId);
+  const personaHistory = useSession((s) => s.personaHistory);
+  const projection = useSession((s) => s.projection);
+  const setProjection = useSession((s) => s.setProjection);
+  const apiConnected = useSession((s) => s.apiConnected);
+  const setLoading = useSession((s) => s.setLoading);
+  const loading = useSession((s) => s.loading);
 
-  const currentDebt = 82000;
-  const monthlyDebtGrowth = 12000;
-  const projMonths = 6;
-  const projectedNoChange = currentDebt + monthlyDebtGrowth * projMonths;
-  const savingsMultiplier = 2.5;
-  const projectedWithChange = Math.max(0, projectedNoChange - whatIfReduction * projMonths * savingsMultiplier);
+  const trajectory = personaHistory.map((snap: any) => ({
+    month: snap.month_index,
+    debt: snap.outstanding_debt_inr,
+  }));
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchProjection = useCallback((reduction: number) => {
+    if (!apiConnected) return;
+    setLoading('project', true);
+    api.project({
+      persona_id: personaId,
+      levers: {
+        discretionary_reduction_inr: reduction,
+        repayment_increase_inr: 0,
+        stc_reduction_count: 0,
+      },
+    }).then((data) => {
+      setProjection(data);
+      setLoading('project', false);
+    }).catch(() => setLoading('project', false));
+  }, [apiConnected, personaId]);
+
+  useEffect(() => {
+    fetchProjection(whatIfReduction);
+  }, [personaId]);
+
+  const handleSliderChange = (val: number) => {
+    setWhatIfReduction(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchProjection(val), 300);
+  };
+
+  const lastDebt = personaHistory.length > 0
+    ? personaHistory[personaHistory.length - 1].outstanding_debt_inr
+    : 82000;
+
+  const projectedNoChange = projection?.scenario_a?.debt?.[2] ?? lastDebt;
+  const projectedWithChange = projection?.scenario_b?.debt?.[2] ?? projectedNoChange;
   const avoided = projectedNoChange - projectedWithChange;
-
-  const maxScore = Math.max(...TRAJECTORY.map(t => t.score));
-  const chartH = 120;
 
   return (
     <div className="pb-6 bg-white">
@@ -112,61 +136,73 @@ export default function DebtSpiralScreen() {
           </div>
         )}
 
-        {/* Trajectory Chart — 12 months */}
+        {/* Trajectory Chart — Debt over months */}
+        {trajectory.length > 0 && (
         <div className="bg-white rounded-xl shadow-gpay border border-border p-4 mb-4">
-          <p className="text-[14px] font-semibold text-text-primary mb-1">Risk Trajectory</p>
-          <p className="text-[11px] text-text-tertiary mb-3">12-month risk score progression</p>
+          <p className="text-[14px] font-semibold text-text-primary mb-1">Debt Trajectory</p>
+          <p className="text-[11px] text-text-tertiary mb-3">Outstanding debt by month</p>
 
-          <div className="relative" style={{ height: chartH + 30 }}>
-            {/* Bars */}
-            <div className="flex items-end gap-[6px] px-1" style={{ height: chartH }}>
-              {TRAJECTORY.map((t) => {
-                const h = (t.score / maxScore) * chartH;
-                const isWarn = t.month === modelWarnedMonth;
-                const isConfirm = t.month === spiralConfirmedMonth;
-                return (
-                  <div key={t.month} className="flex-1 flex flex-col items-center justify-end relative">
-                    {/* Event markers */}
-                    {isWarn && (
-                      <div className="absolute -top-[18px] left-1/2 -translate-x-1/2 whitespace-nowrap">
-                        <div className="bg-risk-moderate text-white text-[7px] font-bold px-1 py-0.5 rounded">Model Warned</div>
-                        <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-l-transparent border-r-transparent border-t-risk-moderate mx-auto" />
-                      </div>
-                    )}
-                    {isConfirm && (
-                      <div className="absolute -top-[18px] left-1/2 -translate-x-1/2 whitespace-nowrap">
-                        <div className="bg-risk-high text-white text-[7px] font-bold px-1 py-0.5 rounded">Rule Confirmed</div>
-                        <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-l-transparent border-r-transparent border-t-risk-high mx-auto" />
-                      </div>
-                    )}
-                    <div className="text-[7px] text-text-secondary font-bold mb-0.5 tabular-nums">{t.score}</div>
-                    <div className="w-full rounded-t-sm" style={{ height: h, backgroundColor: barColor(t.score) }} />
+          {(() => {
+            const maxDebt = Math.max(...trajectory.map((t: any) => t.debt));
+            const chartH = 120;
+            return (
+            <div className="relative" style={{ height: chartH + 30 }}>
+              <div className="flex items-end gap-[6px] px-1" style={{ height: chartH }}>
+                {trajectory.map((t: any) => {
+                  const h = (t.debt / maxDebt) * chartH;
+                  const utilization = t.debt / (useSession.getState().creditLimit || 120000);
+                  const color = utilization >= 0.7 ? '#EA4335' : utilization >= 0.5 ? '#F97316' : utilization >= 0.3 ? '#FBBC04' : '#34A853';
+                  const isWarn = modelWarnedMonth != null && t.month === modelWarnedMonth;
+                  const isConfirm = spiralConfirmedMonth != null && t.month === spiralConfirmedMonth;
+                  return (
+                    <div key={t.month} className="flex-1 flex flex-col items-center justify-end relative">
+                      {isWarn && (
+                        <div className="absolute -top-[18px] left-1/2 -translate-x-1/2 whitespace-nowrap">
+                          <div className="bg-risk-moderate text-white text-[7px] font-bold px-1 py-0.5 rounded">Warned</div>
+                          <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-l-transparent border-r-transparent border-t-risk-moderate mx-auto" />
+                        </div>
+                      )}
+                      {isConfirm && (
+                        <div className="absolute -top-[18px] left-1/2 -translate-x-1/2 whitespace-nowrap">
+                          <div className="bg-risk-high text-white text-[7px] font-bold px-1 py-0.5 rounded">Spiral</div>
+                          <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[4px] border-l-transparent border-r-transparent border-t-risk-high mx-auto" />
+                        </div>
+                      )}
+                      <div className="text-[7px] text-text-secondary font-bold mb-0.5 tabular-nums">{(t.debt/1000).toFixed(0)}k</div>
+                      <div className="w-full rounded-t-sm" style={{ height: h, backgroundColor: color }} />
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex gap-[6px] px-1 mt-1">
+                {trajectory.map((t: any) => (
+                  <div key={t.month} className="flex-1 text-center text-[8px] text-text-tertiary tabular-nums">
+                    M{t.month}
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
-            {/* Month labels */}
-            <div className="flex gap-[6px] px-1 mt-1">
-              {TRAJECTORY.map((t) => (
-                <div key={t.month} className="flex-1 text-center text-[8px] text-text-tertiary tabular-nums">
-                  M{t.month}
-                </div>
-              ))}
-            </div>
-          </div>
+            );
+          })()}
 
-          {/* Legend */}
+          {(modelWarnedMonth != null || spiralConfirmedMonth != null) && (
           <div className="flex items-center gap-4 mt-3 pt-2 border-t border-border">
+            {modelWarnedMonth != null && (
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 bg-risk-moderate rounded-full" />
               <span className="text-[10px] text-text-secondary">Model Warned (M{modelWarnedMonth})</span>
             </div>
+            )}
+            {spiralConfirmedMonth != null && (
             <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 bg-risk-high rounded-full" />
-              <span className="text-[10px] text-text-secondary">Rule Confirmed (M{spiralConfirmedMonth})</span>
+              <span className="text-[10px] text-text-secondary">Spiral Confirmed (M{spiralConfirmedMonth})</span>
             </div>
+            )}
           </div>
+          )}
         </div>
+        )}
 
         {/* What-If Projection */}
         <div className="bg-white rounded-xl shadow-gpay border border-border p-4 mb-4">
@@ -177,7 +213,7 @@ export default function DebtSpiralScreen() {
           <div className="mb-4">
             <div className="flex justify-between text-[11px] text-text-secondary mb-2">
               <span>Monthly reduction</span>
-              <span className="font-bold text-accent">{'₹'}{fmt(whatIfReduction)}/mo</span>
+              <span className="font-bold text-accent">{'₹'}{fmt(whatIfReduction)}/mo {loading.project && '...'}</span>
             </div>
             <input
               type="range"
@@ -185,7 +221,7 @@ export default function DebtSpiralScreen() {
               max={5000}
               step={250}
               value={whatIfReduction}
-              onChange={(e) => setWhatIfReduction(Number(e.target.value))}
+              onChange={(e) => handleSliderChange(Number(e.target.value))}
               className="w-full"
             />
             <div className="flex justify-between text-[9px] text-text-tertiary mt-1">
@@ -218,12 +254,12 @@ export default function DebtSpiralScreen() {
             <div className="bg-red-50 rounded-xl p-3 border border-red-200">
               <p className="text-[10px] text-text-secondary mb-1">Without Change</p>
               <p className="text-[20px] font-bold text-risk-high tabular-nums">{'₹'}{fmt(Math.round(projectedNoChange))}</p>
-              <p className="text-[10px] text-text-tertiary">Projected debt (6mo)</p>
+              <p className="text-[10px] text-text-tertiary">Projected debt (12mo)</p>
             </div>
             <div className="bg-green-50 rounded-xl p-3 border border-green-200">
               <p className="text-[10px] text-text-secondary mb-1">With Change</p>
               <p className="text-[20px] font-bold text-risk-low tabular-nums">{'₹'}{fmt(Math.round(projectedWithChange))}</p>
-              <p className="text-[10px] text-text-tertiary">Projected debt (6mo)</p>
+              <p className="text-[10px] text-text-tertiary">Projected debt (12mo)</p>
             </div>
           </div>
 
