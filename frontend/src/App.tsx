@@ -10,6 +10,7 @@ import TierManageScreen from './screens/TierManageScreen';
 import PayScreen from './screens/PayScreen';
 import PayConfirmScreen from './screens/PayConfirmScreen';
 import PaySuccessScreen from './screens/PaySuccessScreen';
+import PayFailedScreen from './screens/PayFailedScreen';
 import ExpenseEditScreen from './screens/ExpenseEditScreen';
 import BottomNav from './components/BottomNav';
 import StatusBar from './components/StatusBar';
@@ -20,6 +21,13 @@ async function loadPersona(id: string, loadFromApi: (detail: any, score: any) =>
     const detail = await api.getPersona(id);
     loadFromApi(detail, null);
   } catch {}
+}
+
+export async function loadAccount(id: string, setBankBalance: (b: number) => void) {
+  try {
+    const account = await api.getAccount(id);
+    setBankBalance(account.balance_inr);
+  } catch { /* server is authoritative — leave balance as-is if unreachable */ }
 }
 
 function PhoneContent() {
@@ -34,6 +42,7 @@ function PhoneContent() {
     case 'pay': case 'contact-pay': return <PayScreen />;
     case 'pay-confirm': return <PayConfirmScreen />;
     case 'pay-success': return <PaySuccessScreen />;
+    case 'pay-failed': return <PayFailedScreen />;
     case 'expense-edit': return <ExpenseEditScreen />;
     default: return <HomeScreen />;
   }
@@ -48,12 +57,16 @@ function App() {
 
   const personaId = useSession((s) => s.personaId);
   const loadFromApi = useSession((s) => s.loadFromApi);
+  const setBankBalance = useSession((s) => s.setBankBalance);
 
   useEffect(() => {
     api.health()
       .then(() => {
         setApiConnected(true);
-        return loadPersona(personaId, loadFromApi);
+        return Promise.all([
+          loadPersona(personaId, loadFromApi),
+          loadAccount(personaId, setBankBalance),
+        ]);
       })
       .catch(() => setApiConnected(false));
   }, []);
@@ -62,6 +75,7 @@ function App() {
     const { apiConnected } = useSession.getState();
     if (apiConnected) {
       loadPersona(personaId, loadFromApi);
+      loadAccount(personaId, setBankBalance);
     }
   }, [personaId]);
 

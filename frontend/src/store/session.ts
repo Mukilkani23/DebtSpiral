@@ -44,9 +44,16 @@ export type Screen =
   | 'pay'
   | 'pay-confirm'
   | 'pay-success'
+  | 'pay-failed'
   | 'contact-pay'
   | 'persona-switch'
   | 'expense-edit';
+
+export interface PayError {
+  requested_amount_inr: number;
+  available_balance_inr: number;
+  shortfall_inr: number;
+}
 
 export type PayButtonState = 'safe' | 'warning' | 'flagged';
 
@@ -99,12 +106,15 @@ interface SessionState {
   payTier: TierLevel;
   payButtonState: PayButtonState;
   payResult: any | null;
+  payError: PayError | null;
   setPayContact: (c: Contact | null) => void;
   setPayAmount: (a: number) => void;
   setPayCategory: (c: string) => void;
   setPayTier: (t: TierLevel) => void;
   setPayButtonState: (s: PayButtonState) => void;
   setPayResult: (r: any) => void;
+  setPayError: (e: PayError | null) => void;
+  setBankBalance: (b: number) => void;
 
   // Projection
   projection: any | null;
@@ -224,7 +234,8 @@ export const useSession = create<SessionState>((set, get) => ({
   addTransaction: (t) =>
     set((s) => ({
       transactions: [t, ...s.transactions],
-      bankBalance: s.bankBalance - t.amount,
+      // bankBalance is server-authoritative — set explicitly via setBankBalance
+      // from the backend's account response, never derived locally here.
       expenses: s.expenses.map((e) =>
         e.id === t.category || e.name.toLowerCase() === t.category.toLowerCase()
           ? { ...e, currentSpend: e.currentSpend + t.amount }
@@ -238,12 +249,15 @@ export const useSession = create<SessionState>((set, get) => ({
   payTier: 3,
   payButtonState: 'safe',
   payResult: null,
+  payError: null,
   setPayContact: (c) => set({ payContact: c }),
   setPayAmount: (a) => set({ payAmount: a }),
   setPayCategory: (c) => set({ payCategory: c }),
   setPayTier: (t) => set({ payTier: t }),
   setPayButtonState: (s) => set({ payButtonState: s }),
   setPayResult: (r) => set({ payResult: r }),
+  setPayError: (e) => set({ payError: e }),
+  setBankBalance: (b) => set({ bankBalance: b }),
 
   projection: null,
   setProjection: (p) => set({ projection: p }),
@@ -293,8 +307,10 @@ export const useSession = create<SessionState>((set, get) => ({
         { id: 't2', label: 'Petrol', amount: 500, category: 'petrol', tier: 2, timestamp: Date.now() - 86400000, flagged: false },
       ],
       expenses: [...DEFAULT_EXPENSES],
-      bankBalance: 50000,
+      // bankBalance is refreshed from GET /admin/account by the caller
+      // (SettingsScreen's handleReset) after /reset completes server-side.
       payResult: null,
+      payError: null,
       payButtonState: 'safe',
       personaHistory: [],
       projection: null,
@@ -307,7 +323,8 @@ export const useSession = create<SessionState>((set, get) => ({
     set({
       monthlyIncome: persona.monthly_income_inr,
       creditLimit: persona.credit_limit_inr,
-      bankBalance: persona.monthly_income_inr,
+      // bankBalance is NOT set here — it comes only from GET /admin/account,
+      // the server-authoritative demo ledger (see App.tsx's loadAccount()).
       riskScore: assessment.risk_score,
       riskBand: assessment.band,
       spiralDetected: assessment.spiral_detected,

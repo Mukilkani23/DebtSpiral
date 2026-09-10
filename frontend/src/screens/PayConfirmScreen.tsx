@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSession } from '../store/session';
-import { api } from '../api/client';
+import { api, ApiError } from '../api/client';
 import BackHeader from '../components/BackHeader';
 import PayNowButton from '../components/PayNowButton';
 import TierBadge from '../components/TierBadge';
@@ -19,6 +19,8 @@ export default function PayConfirmScreen() {
   const addTransaction = useSession((s) => s.addTransaction);
   const updateRisk = useSession((s) => s.updateRisk);
   const setPayResult = useSession((s) => s.setPayResult);
+  const setPayError = useSession((s) => s.setPayError);
+  const setBankBalance = useSession((s) => s.setBankBalance);
   const setLoading = useSession((s) => s.setLoading);
   const setPayButtonState = useSession((s) => s.setPayButtonState);
   const apiConnected = useSession((s) => s.apiConnected);
@@ -35,74 +37,78 @@ export default function PayConfirmScreen() {
   const computedState = budgetExceeded && payTier === 3 ? 'flagged' : budgetNearlyExceeded ? 'warning' : 'safe';
   const displayState = submitted ? buttonState : computedState;
 
+  const apiCategory = (() => {
+    const catMap: Record<string, string> = {
+      'friends': 'entertainment', 'chatgpt': 'subscription', 'entertainment': 'entertainment',
+      'groceries': 'food_delivery', 'petrol': 'travel', 'medical': 'other',
+      'wifi': 'subscription', 'recharge': 'subscription', 'insurance': 'other',
+      'family': 'other', 'food_delivery': 'food_delivery',
+    };
+    return catMap[payCategory] || 'other';
+  })();
+
   const handlePay = async () => {
     setSubmitted(true);
     setLoading('txn', true);
+    setPayError(null);
 
-    let result: any = null;
-    let newRisk = riskScore;
-    let reasonCodes: any[] = [];
-    let nudge: any = null;
-    let flagged = false;
-
-    const apiCategory = (() => {
-      const catMap: Record<string, string> = {
-        'friends': 'entertainment', 'chatgpt': 'subscription', 'entertainment': 'entertainment',
-        'groceries': 'food_delivery', 'petrol': 'travel', 'medical': 'other',
-        'wifi': 'subscription', 'recharge': 'subscription', 'insurance': 'other',
-        'family': 'other', 'food_delivery': 'food_delivery',
-      };
-      return catMap[payCategory] || 'other';
-    })();
-
-    try {
-      if (apiConnected) {
-        result = await api.transaction({ persona_id: personaId, category: apiCategory, amount_inr: payAmount });
-        flagged = result.flagged ?? false;
-        newRisk = result.risk_after ?? result.risk_score ?? riskScore + (payTier === 3 ? 4 : 1);
-        reasonCodes = result.reason_codes || [];
-        nudge = result.nudge || null;
-        if (result.shap) {
-          useSession.setState({ shap: result.shap });
-        }
-        if (result.spiral_detected !== undefined) {
-          useSession.setState({ spiralDetected: result.spiral_detected });
-        }
-      }
-    } catch {}
-
-    if (!result || newRisk === riskScore) {
-      if (payTier === 3 && budgetExceeded) {
-        flagged = true;
-        newRisk = Math.min(riskScore + 4, 100);
-        reasonCodes = [
-          { code: 'TIER_3', label: 'Tier 3 Budget Exceeded', detail: `Discretionary budget exceeded by ₹${fmt(budgetAfter - (expense?.monthlyBudget || 0))}` },
-          { code: 'LARGE_RELATIVE_TXN', label: 'Large Relative Transaction', detail: `₹${fmt(payAmount)} is significant relative to your monthly income` },
-          { code: 'HIGH_UTILIZATION', label: 'High Credit Utilization', detail: 'Current utilization is above 60%' },
-          { code: 'SPIRAL_TRAJECTORY', label: 'Spiral Trajectory', detail: 'Financial indicators show deteriorating pattern' },
-        ];
-        nudge = { message: `You spent ₹${fmt(payAmount)} on ${payContact?.name || payCategory}. Your Tier 3 budget has been exceeded. Current dues: ₹${fmt(82000)}. Consider reducing discretionary spending this week.` };
-      } else if (budgetNearlyExceeded) {
-        newRisk = Math.min(riskScore + 1, 100);
-      }
+    if (!apiConnected) {
+      // Server is authoritative for affordability — without it reachable,
+      // we cannot approve a payment. Never fabricate a local decision.
+      setPayError(null);
+      setLoading('txn', false);
+      setScreen('pay-failed');
+      return;
     }
 
-    const finalState = flagged ? 'flagged' : budgetNearlyExceeded ? 'warning' : 'safe';
-    setLocalButtonState(finalState);
-    setPayButtonState(finalState);
+    try {
+      const result = await api.transaction({
+        persona_id: personaId, category: apiCategory, amount_inr: payAmount,
+      });
 
-    const newBand = newRisk >= 70 ? 'HIGH' : newRisk >= 50 ? 'ELEVATED' : newRisk >= 30 ? 'MODERATE' : 'LOW';
-    updateRisk(newRisk, newBand, reasonCodes, nudge);
+      const flagged = result.flagged ?? false;
+      const newRisk = result.risk_after ?? result.risk_score ?? riskScore;
+      const reasonCodes = result.reason_codes || [];
+      const nudge = result.nudge || null;
 
-    addTransaction({
-      id: `tx_${Date.now()}`, label: payContact?.name || payCategory, amount: payAmount,
-      category: payCategory, tier: payTier, timestamp: Date.now(), flagged,
-      riskBefore: riskScore, riskAfter: newRisk,
-    });
+      if (result.shap) useSession.setState({ shap: result.shap });
+      if (result.spiral_detected !== undefined) useSession.setState({ spiralDetected: result.spiral_detected });
 
-    setPayResult({ flagged, riskBefore: riskScore, riskAfter: newRisk, reasonCodes });
-    setLoading('txn', false);
-    setScreen('pay-success');
+      const finalState = flagged ? 'flagged' : 'safe';
+      setLocalButtonState(finalState);
+      setPayButtonState(finalState);
+
+      const newBand = newRisk >= 70 ? 'HIGH' : newRisk >= 50 ? 'ELEVATED' : newRisk >= 30 ? 'MODERATE' : 'LOW';
+      updateRisk(newRisk, newBand, reasonCodes, nudge);
+
+      addTransaction({
+        id: `tx_${Date.now()}`, label: payContact?.name || payCategory, amount: payAmount,
+        category: payCategory, tier: payTier, timestamp: Date.now(), flagged,
+        riskBefore: riskScore, riskAfter: newRisk,
+      });
+
+      // Refresh the real balance from the backend — never derive it locally.
+      try {
+        const account = await api.getAccount(personaId);
+        setBankBalance(account.balance_inr);
+      } catch { /* balance display will just be stale until next refresh */ }
+
+      setPayResult({ flagged, riskBefore: riskScore, riskAfter: newRisk, reasonCodes });
+      setLoading('txn', false);
+      setScreen('pay-success');
+    } catch (err) {
+      setLoading('txn', false);
+      if (err instanceof ApiError && err.status === 400 && err.body?.error_code === 'INSUFFICIENT_BALANCE') {
+        setPayError({
+          requested_amount_inr: err.body.requested_amount_inr,
+          available_balance_inr: err.body.available_balance_inr,
+          shortfall_inr: err.body.shortfall_inr,
+        });
+      } else {
+        setPayError(null);
+      }
+      setScreen('pay-failed');
+    }
   };
 
   return (
