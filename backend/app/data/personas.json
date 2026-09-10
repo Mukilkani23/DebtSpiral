@@ -1,0 +1,117 @@
+[
+  {
+    "persona_id": "A",
+    "label": "Steady",
+    "monthly_income_inr": 100000,
+    "income_type": "stable",
+    "credit_limit_inr": 300000,
+    "is_live": false,
+    "narrative": "Stable income, low utilization, consistent repayment above minimum",
+    "history": [
+      {"month_index":1,"income_inr":100000,"essential_spend_inr":40000,"discretionary_spend_inr":15000,"outstanding_debt_inr":52000,"credit_limit_inr":300000,"repayment_inr":9000,"min_due_inr":3000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":5000},
+      {"month_index":2,"income_inr":100000,"essential_spend_inr":41000,"discretionary_spend_inr":14000,"outstanding_debt_inr":50000,"credit_limit_inr":300000,"repayment_inr":9500,"min_due_inr":3000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":5000},
+      {"month_index":3,"income_inr":100000,"essential_spend_inr":40500,"discretionary_spend_inr":15500,"outstanding_debt_inr":48000,"credit_limit_inr":300000,"repayment_inr":9200,"min_due_inr":2900,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":5000},
+      {"month_index":4,"income_inr":100000,"essential_spend_inr":40000,"discretionary_spend_inr":14500,"outstanding_debt_inr":46000,"credit_limit_inr":300000,"repayment_inr":9800,"min_due_inr":2800,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":5000},
+      {"month_index":5,"income_inr":100000,"essential_spend_inr":41000,"discretionary_spend_inr":15000,"outstanding_debt_inr":44000,"credit_limit_inr":300000,"repayment_inr":9500,"min_due_inr":2700,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":5000},
+      {"month_index":6,"income_inr":100000,"essential_spend_inr":40000,"discretionary_spend_inr":14000,"outstanding_debt_inr":42000,"credit_limit_inr":300000,"repayment_inr":10000,"min_due_inr":2600,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":5000},
+      {"month_index":7,"income_inr":100000,"essential_spend_inr":40500,"discretionary_spend_inr":15000,"outstanding_debt_inr":40000,"credit_limit_inr":300000,"repayment_inr":9500,"min_due_inr":2500,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":5000},
+      {"month_index":8,"income_inr":100000,"essential_spend_inr":41000,"discretionary_spend_inr":14500,"outstanding_debt_inr":38000,"credit_limit_inr":300000,"repayment_inr":9800,"min_due_inr":2400,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":5000},
+      {"month_index":9,"income_inr":100000,"essential_spend_inr":40000,"discretionary_spend_inr":15000,"outstanding_debt_inr":36000,"credit_limit_inr":300000,"repayment_inr":10000,"min_due_inr":2300,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":5000},
+      {"month_index":10,"income_inr":100000,"essential_spend_inr":40500,"discretionary_spend_inr":14000,"outstanding_debt_inr":34000,"credit_limit_inr":300000,"repayment_inr":9500,"min_due_inr":2200,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":5000},
+      {"month_index":11,"income_inr":100000,"essential_spend_inr":40000,"discretionary_spend_inr":15500,"outstanding_debt_inr":32000,"credit_limit_inr":300000,"repayment_inr":9800,"min_due_inr":2100,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":5000},
+      {"month_index":12,"income_inr":100000,"essential_spend_inr":41000,"discretionary_spend_inr":14500,"outstanding_debt_inr":54000,"credit_limit_inr":300000,"repayment_inr":9200,"min_due_inr":3200,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":5000}
+    ]
+  },
+  {
+    "persona_id": "B",
+    "label": "High Earner, High Risk",
+    "monthly_income_inr": 500000,
+    "income_type": "stable",
+    "credit_limit_inr": 1200000,
+    "is_live": false,
+    "narrative": "High income masks deteriorating trajectory — rising utilization, minimum payments, frequent short-term credit",
+    "history": [
+      {"month_index":1,"income_inr":500000,"essential_spend_inr":120000,"discretionary_spend_inr":140000,"outstanding_debt_inr":600000,"credit_limit_inr":1200000,"repayment_inr":25000,"min_due_inr":18000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":30000},
+      {"month_index":2,"income_inr":500000,"essential_spend_inr":122000,"discretionary_spend_inr":145000,"outstanding_debt_inr":640000,"credit_limit_inr":1200000,"repayment_inr":22000,"min_due_inr":19000,"short_term_credit_count":1,"short_term_credit_amount_inr":30000,"emi_obligations_inr":30000},
+      {"month_index":3,"income_inr":500000,"essential_spend_inr":120000,"discretionary_spend_inr":150000,"outstanding_debt_inr":690000,"credit_limit_inr":1200000,"repayment_inr":21000,"min_due_inr":20000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":30000},
+      {"month_index":4,"income_inr":500000,"essential_spend_inr":121000,"discretionary_spend_inr":155000,"outstanding_debt_inr":740000,"credit_limit_inr":1200000,"repayment_inr":22000,"min_due_inr":22000,"short_term_credit_count":1,"short_term_credit_amount_inr":40000,"emi_obligations_inr":30000},
+      {"month_index":5,"income_inr":500000,"essential_spend_inr":120000,"discretionary_spend_inr":148000,"outstanding_debt_inr":790000,"credit_limit_inr":1200000,"repayment_inr":23000,"min_due_inr":23000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":30000},
+      {"month_index":6,"income_inr":500000,"essential_spend_inr":122000,"discretionary_spend_inr":152000,"outstanding_debt_inr":830000,"credit_limit_inr":1200000,"repayment_inr":24000,"min_due_inr":24000,"short_term_credit_count":1,"short_term_credit_amount_inr":35000,"emi_obligations_inr":30000},
+      {"month_index":7,"income_inr":500000,"essential_spend_inr":120000,"discretionary_spend_inr":155000,"outstanding_debt_inr":870000,"credit_limit_inr":1200000,"repayment_inr":25000,"min_due_inr":25000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":30000},
+      {"month_index":8,"income_inr":500000,"essential_spend_inr":121000,"discretionary_spend_inr":160000,"outstanding_debt_inr":900000,"credit_limit_inr":1200000,"repayment_inr":25000,"min_due_inr":25000,"short_term_credit_count":1,"short_term_credit_amount_inr":45000,"emi_obligations_inr":30000},
+      {"month_index":9,"income_inr":500000,"essential_spend_inr":120000,"discretionary_spend_inr":150000,"outstanding_debt_inr":920000,"credit_limit_inr":1200000,"repayment_inr":26000,"min_due_inr":26000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":30000},
+      {"month_index":10,"income_inr":500000,"essential_spend_inr":122000,"discretionary_spend_inr":155000,"outstanding_debt_inr":940000,"credit_limit_inr":1200000,"repayment_inr":26000,"min_due_inr":26000,"short_term_credit_count":1,"short_term_credit_amount_inr":50000,"emi_obligations_inr":30000},
+      {"month_index":11,"income_inr":500000,"essential_spend_inr":120000,"discretionary_spend_inr":148000,"outstanding_debt_inr":950000,"credit_limit_inr":1200000,"repayment_inr":27000,"min_due_inr":27000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":30000},
+      {"month_index":12,"income_inr":500000,"essential_spend_inr":121000,"discretionary_spend_inr":152000,"outstanding_debt_inr":960000,"credit_limit_inr":1200000,"repayment_inr":27000,"min_due_inr":27000,"short_term_credit_count":1,"short_term_credit_amount_inr":40000,"emi_obligations_inr":30000}
+    ]
+  },
+  {
+    "persona_id": "C",
+    "label": "Rising Pressure",
+    "monthly_income_inr": 50000,
+    "income_type": "stable",
+    "credit_limit_inr": 120000,
+    "is_live": true,
+    "narrative": "Stable ₹50k income, utilization climbing 31%→68%, repayment sliding to minimum, 3 short-term loans in 4 months — the golden-path demo persona",
+    "history": [
+      {"month_index":1,"income_inr":50000,"essential_spend_inr":21000,"discretionary_spend_inr":8000,"outstanding_debt_inr":37000,"credit_limit_inr":120000,"repayment_inr":6500,"min_due_inr":3000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":6000},
+      {"month_index":2,"income_inr":50000,"essential_spend_inr":21500,"discretionary_spend_inr":8500,"outstanding_debt_inr":38500,"credit_limit_inr":120000,"repayment_inr":6200,"min_due_inr":3000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":6000},
+      {"month_index":3,"income_inr":50000,"essential_spend_inr":21000,"discretionary_spend_inr":9000,"outstanding_debt_inr":40000,"credit_limit_inr":120000,"repayment_inr":5800,"min_due_inr":3000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":6000},
+      {"month_index":4,"income_inr":50000,"essential_spend_inr":22000,"discretionary_spend_inr":9500,"outstanding_debt_inr":43000,"credit_limit_inr":120000,"repayment_inr":5200,"min_due_inr":3000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":6000},
+      {"month_index":5,"income_inr":50000,"essential_spend_inr":21500,"discretionary_spend_inr":10000,"outstanding_debt_inr":48000,"credit_limit_inr":120000,"repayment_inr":4500,"min_due_inr":3000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":6000},
+      {"month_index":6,"income_inr":50000,"essential_spend_inr":22000,"discretionary_spend_inr":11000,"outstanding_debt_inr":54000,"credit_limit_inr":120000,"repayment_inr":4000,"min_due_inr":3000,"short_term_credit_count":1,"short_term_credit_amount_inr":5000,"emi_obligations_inr":6000},
+      {"month_index":7,"income_inr":50000,"essential_spend_inr":21500,"discretionary_spend_inr":11500,"outstanding_debt_inr":60000,"credit_limit_inr":120000,"repayment_inr":3800,"min_due_inr":3000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":6000},
+      {"month_index":8,"income_inr":50000,"essential_spend_inr":22000,"discretionary_spend_inr":12000,"outstanding_debt_inr":66000,"credit_limit_inr":120000,"repayment_inr":3500,"min_due_inr":3000,"short_term_credit_count":1,"short_term_credit_amount_inr":7000,"emi_obligations_inr":6000},
+      {"month_index":9,"income_inr":50000,"essential_spend_inr":21500,"discretionary_spend_inr":12500,"outstanding_debt_inr":72000,"credit_limit_inr":120000,"repayment_inr":3200,"min_due_inr":3000,"short_term_credit_count":1,"short_term_credit_amount_inr":8000,"emi_obligations_inr":6000},
+      {"month_index":10,"income_inr":50000,"essential_spend_inr":22000,"discretionary_spend_inr":13000,"outstanding_debt_inr":76000,"credit_limit_inr":120000,"repayment_inr":3100,"min_due_inr":3000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":6000},
+      {"month_index":11,"income_inr":50000,"essential_spend_inr":21500,"discretionary_spend_inr":13500,"outstanding_debt_inr":80000,"credit_limit_inr":120000,"repayment_inr":3050,"min_due_inr":3000,"short_term_credit_count":1,"short_term_credit_amount_inr":9000,"emi_obligations_inr":6000},
+      {"month_index":12,"income_inr":50000,"essential_spend_inr":22000,"discretionary_spend_inr":14500,"outstanding_debt_inr":82000,"credit_limit_inr":120000,"repayment_inr":3100,"min_due_inr":3000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":6000}
+    ]
+  },
+  {
+    "persona_id": "D",
+    "label": "Variable Income",
+    "monthly_income_inr": 55000,
+    "income_type": "variable",
+    "credit_limit_inr": 150000,
+    "is_live": false,
+    "narrative": "Gig worker with volatile income (₹40–70k), moderate utilization, decent discipline — volatility is context, not a verdict",
+    "history": [
+      {"month_index":1,"income_inr":45000,"essential_spend_inr":20000,"discretionary_spend_inr":8000,"outstanding_debt_inr":62000,"credit_limit_inr":150000,"repayment_inr":5500,"min_due_inr":3500,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":4000},
+      {"month_index":2,"income_inr":68000,"essential_spend_inr":20000,"discretionary_spend_inr":10000,"outstanding_debt_inr":58000,"credit_limit_inr":150000,"repayment_inr":8000,"min_due_inr":3400,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":4000},
+      {"month_index":3,"income_inr":40000,"essential_spend_inr":20000,"discretionary_spend_inr":6000,"outstanding_debt_inr":63000,"credit_limit_inr":150000,"repayment_inr":4500,"min_due_inr":3500,"short_term_credit_count":1,"short_term_credit_amount_inr":5000,"emi_obligations_inr":4000},
+      {"month_index":4,"income_inr":72000,"essential_spend_inr":20500,"discretionary_spend_inr":12000,"outstanding_debt_inr":56000,"credit_limit_inr":150000,"repayment_inr":10000,"min_due_inr":3300,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":4000},
+      {"month_index":5,"income_inr":48000,"essential_spend_inr":20000,"discretionary_spend_inr":7000,"outstanding_debt_inr":60000,"credit_limit_inr":150000,"repayment_inr":5000,"min_due_inr":3400,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":4000},
+      {"month_index":6,"income_inr":65000,"essential_spend_inr":20000,"discretionary_spend_inr":10000,"outstanding_debt_inr":55000,"credit_limit_inr":150000,"repayment_inr":9000,"min_due_inr":3200,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":4000},
+      {"month_index":7,"income_inr":42000,"essential_spend_inr":20000,"discretionary_spend_inr":6500,"outstanding_debt_inr":61000,"credit_limit_inr":150000,"repayment_inr":4500,"min_due_inr":3400,"short_term_credit_count":1,"short_term_credit_amount_inr":6000,"emi_obligations_inr":4000},
+      {"month_index":8,"income_inr":70000,"essential_spend_inr":20500,"discretionary_spend_inr":11000,"outstanding_debt_inr":54000,"credit_limit_inr":150000,"repayment_inr":10000,"min_due_inr":3200,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":4000},
+      {"month_index":9,"income_inr":50000,"essential_spend_inr":20000,"discretionary_spend_inr":8000,"outstanding_debt_inr":58000,"credit_limit_inr":150000,"repayment_inr":5500,"min_due_inr":3300,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":4000},
+      {"month_index":10,"income_inr":60000,"essential_spend_inr":20000,"discretionary_spend_inr":9500,"outstanding_debt_inr":55000,"credit_limit_inr":150000,"repayment_inr":7500,"min_due_inr":3200,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":4000},
+      {"month_index":11,"income_inr":43000,"essential_spend_inr":20000,"discretionary_spend_inr":7000,"outstanding_debt_inr":60000,"credit_limit_inr":150000,"repayment_inr":4800,"min_due_inr":3400,"short_term_credit_count":1,"short_term_credit_amount_inr":5000,"emi_obligations_inr":4000},
+      {"month_index":12,"income_inr":67000,"essential_spend_inr":20500,"discretionary_spend_inr":10000,"outstanding_debt_inr":56000,"credit_limit_inr":150000,"repayment_inr":8500,"min_due_inr":3200,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":4000}
+    ]
+  },
+  {
+    "persona_id": "E",
+    "label": "Recovering",
+    "monthly_income_inr": 60000,
+    "income_type": "stable",
+    "credit_limit_inr": 200000,
+    "is_live": false,
+    "narrative": "High debt (₹2.4L) but utilization falling, repayments rising — direction beats magnitude. The GAP-2 demo beat.",
+    "history": [
+      {"month_index":1,"income_inr":60000,"essential_spend_inr":24000,"discretionary_spend_inr":15000,"outstanding_debt_inr":260000,"credit_limit_inr":200000,"repayment_inr":4000,"min_due_inr":6000,"short_term_credit_count":2,"short_term_credit_amount_inr":15000,"emi_obligations_inr":8000},
+      {"month_index":2,"income_inr":60000,"essential_spend_inr":24000,"discretionary_spend_inr":14000,"outstanding_debt_inr":258000,"credit_limit_inr":200000,"repayment_inr":5000,"min_due_inr":6000,"short_term_credit_count":1,"short_term_credit_amount_inr":8000,"emi_obligations_inr":8000},
+      {"month_index":3,"income_inr":60000,"essential_spend_inr":24000,"discretionary_spend_inr":13000,"outstanding_debt_inr":255000,"credit_limit_inr":200000,"repayment_inr":6500,"min_due_inr":6000,"short_term_credit_count":1,"short_term_credit_amount_inr":5000,"emi_obligations_inr":8000},
+      {"month_index":4,"income_inr":60000,"essential_spend_inr":24000,"discretionary_spend_inr":12000,"outstanding_debt_inr":250000,"credit_limit_inr":200000,"repayment_inr":7500,"min_due_inr":6000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":8000},
+      {"month_index":5,"income_inr":60000,"essential_spend_inr":24000,"discretionary_spend_inr":11000,"outstanding_debt_inr":245000,"credit_limit_inr":200000,"repayment_inr":8000,"min_due_inr":5800,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":8000},
+      {"month_index":6,"income_inr":60000,"essential_spend_inr":24000,"discretionary_spend_inr":10000,"outstanding_debt_inr":240000,"credit_limit_inr":200000,"repayment_inr":8500,"min_due_inr":5700,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":8000},
+      {"month_index":7,"income_inr":60000,"essential_spend_inr":24000,"discretionary_spend_inr":9500,"outstanding_debt_inr":234000,"credit_limit_inr":200000,"repayment_inr":9000,"min_due_inr":5500,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":8000},
+      {"month_index":8,"income_inr":60000,"essential_spend_inr":24000,"discretionary_spend_inr":9000,"outstanding_debt_inr":228000,"credit_limit_inr":200000,"repayment_inr":9500,"min_due_inr":5400,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":8000},
+      {"month_index":9,"income_inr":60000,"essential_spend_inr":24000,"discretionary_spend_inr":8500,"outstanding_debt_inr":222000,"credit_limit_inr":200000,"repayment_inr":10000,"min_due_inr":5300,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":8000},
+      {"month_index":10,"income_inr":60000,"essential_spend_inr":24000,"discretionary_spend_inr":8000,"outstanding_debt_inr":215000,"credit_limit_inr":200000,"repayment_inr":10500,"min_due_inr":5200,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":8000},
+      {"month_index":11,"income_inr":60000,"essential_spend_inr":24000,"discretionary_spend_inr":7500,"outstanding_debt_inr":208000,"credit_limit_inr":200000,"repayment_inr":11000,"min_due_inr":5000,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":8000},
+      {"month_index":12,"income_inr":60000,"essential_spend_inr":24000,"discretionary_spend_inr":7000,"outstanding_debt_inr":200000,"credit_limit_inr":200000,"repayment_inr":11500,"min_due_inr":4800,"short_term_credit_count":0,"short_term_credit_amount_inr":0,"emi_obligations_inr":8000}
+    ]
+  }
+]

@@ -1,0 +1,31 @@
+{
+  "persona": {
+    "persona_id": "C",
+    "label": "Rising Pressure",
+    "monthly_income_inr": 50000,
+    "income_type": "stable",
+    "credit_limit_inr": 120000,
+    "is_live": true,
+    "narrative": "Stable ₹50k income, utilization climbing 31%→68%, repayment sliding to minimum"
+  },
+  "assessment": {
+    "risk_score": 87,
+    "probability": 0.87,
+    "band": "HIGH",
+    "spiral_detected": true,
+    "spiral_confirmed_month": 8,
+    "model_warned_month": 5,
+    "lead_time_months": 3.0
+  },
+  "shap": {
+    "base_value": 0.25,
+    "items": [
+      { "feature": "utilization_trend", "display_name": "Credit utilization climbing", "value": 0.062, "shap": 0.14, "direction": "+" },
+      { "feature": "min_payment_ratio_trend", "display_name": "Repayment discipline eroding", "value": -0.031, "shap": 0.11, "direction": "+" },
+      { "feature": "dti_trend", "display_name": "Debt-to-income growing", "value": 0.045, "shap": 0.09, "direction": "+" },
+      { "feature": "stc_frequency", "display_name": "Short-term borrowing increasing", "value": 0.5, "shap": 0.07, "direction": "+" },
+      { "feature": "recovery_slope", "display_name": "Recovery capacity shrinking", "value": -0.02, "shap": 0.06, "direction": "+" },
+      { "feature": "absolute_debt_inr", "display_name": "Outstanding debt level", "value": 82000, "shap": 0.01, "direction": "+" }
+    ]
+  }
+}

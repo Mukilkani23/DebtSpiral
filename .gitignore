@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
+
+# Environment
+.env
+
+# Data (raw/processed are generated, not committed)
+data/raw/
+data/processed/
+
+# Runtime logs
+backend/app/data/nudge_log.jsonl
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Existing non-source files
+credit_card_default.csv
+*.png
+*.jpeg
+*.jpg
+MASTER BUILD.md
