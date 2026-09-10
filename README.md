@@ -27,11 +27,76 @@ Raw txns → [Aggregation boundary] → Features (ratios & trends only)
 
 ## Quick Start
 
+### Prerequisites
+
+- Python 3.11+
+- Node.js 18+
+
+### 1. Install Python dependencies
+
 ```bash
-make install        # install Python + Node dependencies
-make api            # start FastAPI backend on :8000
-make web            # start Vite frontend on :5173 (separate terminal)
+pip install fastapi uvicorn pydantic-settings xgboost scikit-learn shap joblib numpy
 ```
+
+### 2. Install frontend dependencies
+
+```bash
+cd frontend
+npm install
+cd ..
+```
+
+### 3. Start the backend (Terminal 1)
+
+```bash
+python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+```
+
+The API loads the trained XGBoost model and 5 demo personas at startup.
+
+### 4. Start the frontend (Terminal 2)
+
+```bash
+cd frontend
+npm run dev
+```
+
+### 5. Open in browser
+
+Go to **http://localhost:5173**
+
+### Optional: Twilio WhatsApp notifications
+
+Create a `.env` file in the project root:
+
+```env
+TWILIO_ENABLED=true
+TWILIO_ACCOUNT_SID=your_sid
+TWILIO_AUTH_TOKEN=your_token
+DEMO_WHATSAPP_TO=whatsapp:+91XXXXXXXXXX
+```
+
+### Optional: Re-run the ML pipeline from scratch
+
+```bash
+python -m backend.ml.generate_dataset    # generate 800 synthetic users
+python -m backend.ml.build_features      # compute 16 features per origin
+python -m backend.ml.label               # forward-window labeling
+python -m backend.ml.train               # XGBoost + isotonic calibration
+python -m backend.ml.evaluate            # lead time + FP analysis
+```
+
+### API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Model status, persona count, uptime |
+| GET | `/personas` | List all personas with risk scores |
+| GET | `/personas/{id}` | Persona detail + SHAP explanation |
+| POST | `/score` | Compute risk score for a persona |
+| POST | `/transaction` | Process transaction, flag if risky, generate nudge |
+| POST | `/project` | Project debt scenarios (do nothing vs change behavior) |
+| POST | `/reset` | Reset all personas to initial state |
 
 ## Tech Stack
 
@@ -45,14 +110,13 @@ make web            # start Vite frontend on :5173 (separate terminal)
 | Charts | Recharts |
 | Notifications | Twilio WhatsApp Sandbox (optional) |
 
-## Key Metrics
+## Model Metrics (Trained)
 
-_Generated after ML training (Phase 3)_
-
-| Metric | Target |
-|--------|--------|
-| Median lead time | ≥ 2.0 months |
-| ROC-AUC | 0.78 – 0.90 |
-| PR-AUC | ≥ 0.55 |
-| Brier score | ≤ 0.16 |
-| FP rate (recovering users) | ≤ 0.15 |
+| Metric | Value |
+|--------|-------|
+| ROC-AUC | 0.8267 |
+| PR-AUC | 0.6097 |
+| Brier score | 0.1401 |
+| Median lead time | 2.0 months |
+| FP rate (recovering users) | 0.0462 |
+| Precision @ top decile | 0.7308 |
