@@ -123,6 +123,22 @@ See [CONTRACTS.md](CONTRACTS.md) for full request/response schemas and the
 | Charts | Recharts |
 | Notifications | Twilio WhatsApp Sandbox (optional) |
 
+### Transaction Balance Protection
+
+DebtSpiral treats account balance as a server-authoritative constraint on
+its **Demo Account Ledger** (not a real bank integration). A transaction is
+accepted only when:
+
+```
+transaction_amount <= available_balance
+```
+
+If the requested amount exceeds the available balance, `POST /transaction`
+rejects it with `INSUFFICIENT_BALANCE` (HTTP 400) and does not mutate the
+account balance, persona history, or trigger any risk scoring, rule
+evaluation, or notification — see [CONTRACTS.md](CONTRACTS.md) for the
+exact response shape.
+
 ## Model Metrics (Trained)
 
 | Metric | Value |

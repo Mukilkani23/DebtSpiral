@@ -233,3 +233,12 @@ class TierConfigUpdateRequest(BaseModel):
     model_config = {"extra": "forbid"}
     category_tiers: Optional[dict[str, int]] = None
     extra_funds_ratios: Optional[dict[str, float]] = None
+
+
+class InsufficientBalanceResponse(BaseModel):
+    success: bool = False
+    error_code: str = "INSUFFICIENT_BALANCE"
+    message: str = "Insufficient balance"
+    requested_amount_inr: float
+    available_balance_inr: float
+    shortfall_inr: float

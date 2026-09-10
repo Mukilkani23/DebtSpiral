@@ -1,9 +1,11 @@
 import uuid
 from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi.responses import JSONResponse
 from ..config import settings
 from ..schemas import (
     TransactionRequest, TransactionResponse, RiskBand,
     ReasonCode, ShapExplanation, ShapItem, NudgeResponse, DeliveryStatus,
+    InsufficientBalanceResponse,
 )
 from ..services.session_store import get_persona, update_persona
 from ..services import features as feature_engine
@@ -13,6 +15,7 @@ from ..services.loop_detector import evaluate as loop_evaluate, find_spiral_mont
 from ..services.rules import evaluate as rules_evaluate
 from ..services.notify import send as notify_send
 from ..services import tier_config_store
+from ..services import account_store
 from .score import _band
 
 router = APIRouter()
@@ -25,6 +28,25 @@ def process_transaction(req: TransactionRequest, background_tasks: BackgroundTas
         raise HTTPException(status_code=404, detail="Persona not found")
     if not persona.is_live:
         raise HTTPException(status_code=403, detail="Persona is not live — static snapshot only")
+
+    # Financial-account validation happens BEFORE any state mutation or risk
+    # pipeline work. account_store.adjust_balance() checks-and-commits in one
+    # call (no separate read-then-write), so a rejection here touches nothing
+    # else: no persona.history mutation, no scoring, no rule engine, no nudge.
+    try:
+        account_store.adjust_balance(req.persona_id, -req.amount_inr)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Account not found for persona")
+    except ValueError:
+        account = account_store.get_account(req.persona_id)
+        available = account["balance_inr"] if account else 0.0
+        shortfall = round(req.amount_inr - available, 2)
+        error = InsufficientBalanceResponse(
+            requested_amount_inr=req.amount_inr,
+            available_balance_inr=available,
+            shortfall_inr=shortfall,
+        )
+        return JSONResponse(status_code=400, content=error.model_dump())
 
     history_before = [s.model_dump() for s in persona.history]
     as_of_before = max(s["month_index"] for s in history_before)
@@ -77,16 +99,24 @@ def process_transaction(req: TransactionRequest, background_tasks: BackgroundTas
 
     if nudge_triggered:
         nid = str(uuid.uuid4())
+        # Customize the outbound message with the model's top SHAP driver.
+        # This is presentation-only: it never touches reason_codes or the
+        # flagging decision (rules.py stays pure, never imports explain.py).
+        nudge_message = rule_result.nudge_message
+        if shap_data["items"]:
+            top_driver = shap_data["items"][0]["display_name"]
+            nudge_message = f"{nudge_message} Biggest driver: {top_driver}."
+
         nudge_resp = NudgeResponse(
             nudge_id=nid,
-            message=rule_result.nudge_message,
+            message=nudge_message,
             suggested_alternative=rule_result.suggested_alternative,
             delivery=DeliveryStatus(channel="fallback", status="pending", error=None),
         )
         background_tasks.add_task(
             notify_send,
             nudge_id=nid,
-            message=rule_result.nudge_message,
+            message=nudge_message,
             twilio_enabled=settings.twilio_enabled,
             twilio_sid=settings.twilio_account_sid,
             twilio_token=settings.twilio_auth_token,

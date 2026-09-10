@@ -385,6 +385,65 @@ message explicitly states it is a recommendation, not a completed payment.
 
 ---
 
+## v5.1 Extension — Transaction Balance Protection (INSUFFICIENT_BALANCE)
+
+> Added after the v5 account/tier-config extension. Existing sections
+> above (including `TransactionResponse`) are unchanged for a *successful*
+> transaction.
+
+**Invariant:** `POST /transaction` requires `amount_inr <= available_balance`
+(the persona's `services/account_store.py` demo ledger, not persona.history)
+before any other work happens. The check and the balance deduction are one
+atomic call (`account_store.adjust_balance(persona_id, -amount_inr)`) — there
+is no read-then-write gap, so two rapid sequential requests can't both pass
+against a stale balance.
+
+### InsufficientBalanceResponse
+
+On rejection, `POST /transaction` returns **HTTP 400** (matching the existing
+`/admin/account/adjust` convention for balance-validation failures) with a
+flat body — no `{"detail": ...}` wrapper:
+
+```json
+{
+  "success": false,
+  "error_code": "INSUFFICIENT_BALANCE",
+  "message": "Insufficient balance",
+  "requested_amount_inr": 25000,
+  "available_balance_inr": 20000,
+  "shortfall_inr": 5000
+}
+```
+
+On rejection:
+- The account balance is **not** mutated.
+- `persona.history` is **not** mutated (feature engine, XGBoost, loop
+  detector, and rule engine never run).
+- No nudge is created and no notification fires.
+- The response carries **no** `reason_codes` and **no** `nudge` field —
+  this codebase has no `UNPLANNED_EXPENSE` code (confirmed by audit: the 8
+  codes in `rules.py` don't include it), so nothing analogous fires either.
+
+`amount_inr <= 0` is already rejected by the existing `TransactionRequest`
+schema (`Field(gt=0, le=500000)`) as **HTTP 422** — no new validation was
+needed for that case.
+
+This check is independent of `risk_score`, `spiral_detected`, and tier: a
+healthy, non-spiraling persona is rejected exactly the same way a spiraling
+one is, purely on the balance math.
+
+### Notification customization (nudge text only)
+
+The WhatsApp/notification text for a **successfully flagged** transaction
+now appends the model's top SHAP driver, e.g. *"...Biggest driver:
+Discretionary spending ratio."* This is composed in `api/transaction.py`
+from the existing `ShapExplanation` — `rules.py` is untouched and still
+never imports `explain.py` or sees a SHAP value; `reason_codes` are
+unaffected. This customization does not apply to the `INSUFFICIENT_BALANCE`
+path (there is no nudge on that path at all).
+
+---
+
 ## Module Boundaries
 
 - `api/*` may only import `services/*` and `schemas`
