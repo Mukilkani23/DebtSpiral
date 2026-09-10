@@ -1,98 +1,62 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useSession } from './store/session';
 import { api } from './api/client';
-import fixtureC from './fixtures/persona_c.json';
+import HomeScreen from './screens/HomeScreen';
+import ActivityScreen from './screens/ActivityScreen';
+import DebtSpiralScreen from './screens/DebtSpiralScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import TiersScreen from './screens/TiersScreen';
+import TierManageScreen from './screens/TierManageScreen';
+import PayScreen from './screens/PayScreen';
+import PayConfirmScreen from './screens/PayConfirmScreen';
+import PaySuccessScreen from './screens/PaySuccessScreen';
+import ExpenseEditScreen from './screens/ExpenseEditScreen';
+import BottomNav from './components/BottomNav';
+import StatusBar from './components/StatusBar';
+import NudgeBanner from './components/NudgeBanner';
+
+function PhoneContent() {
+  const screen = useSession((s) => s.screen);
+  switch (screen) {
+    case 'home': return <HomeScreen />;
+    case 'activity': return <ActivityScreen />;
+    case 'debtspiral': return <DebtSpiralScreen />;
+    case 'settings': return <SettingsScreen />;
+    case 'tiers': return <TiersScreen />;
+    case 'tier-manage': return <TierManageScreen />;
+    case 'pay': case 'contact-pay': return <PayScreen />;
+    case 'pay-confirm': return <PayConfirmScreen />;
+    case 'pay-success': return <PaySuccessScreen />;
+    case 'expense-edit': return <ExpenseEditScreen />;
+    default: return <HomeScreen />;
+  }
+}
+
+const NAV_SCREENS = new Set(['home', 'activity', 'debtspiral', 'settings']);
 
 function App() {
-  const [health, setHealth] = useState<any>(null);
-  const [personas, setPersonas] = useState<any[]>([]);
-  const [useFixtures, setUseFixtures] = useState(true);
+  const screen = useSession((s) => s.screen);
+  const setApiConnected = useSession((s) => s.setApiConnected);
+  const nudgeVisible = useSession((s) => s.nudgeVisible);
 
   useEffect(() => {
-    api.health()
-      .then((h) => {
-        setHealth(h);
-        setUseFixtures(false);
-        return api.getPersonas();
-      })
-      .then(setPersonas)
-      .catch(() => {
-        setUseFixtures(true);
-      });
+    api.health().then(() => setApiConnected(true)).catch(() => setApiConnected(false));
   }, []);
 
-  const riskScore = useFixtures
-    ? fixtureC.assessment.risk_score
-    : 0;
-
-  const band = useFixtures
-    ? fixtureC.assessment.band
-    : 'LOW';
-
-  const bandColor: Record<string, string> = {
-    LOW: 'text-risk-low',
-    MODERATE: 'text-risk-moderate',
-    ELEVATED: 'text-risk-elevated',
-    HIGH: 'text-risk-high',
-  };
-
   return (
-    <div className="min-h-screen bg-base p-6">
-      <header className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold text-text-primary">
-          DebtSpiral
-        </h1>
-        <div className="flex gap-2">
-          {['A', 'B', 'C', 'D', 'E'].map((id) => (
-            <button
-              key={id}
-              className={`px-3 py-1 rounded-card text-sm font-medium border ${
-                id === 'C'
-                  ? 'bg-accent text-white border-accent'
-                  : 'bg-card text-text-secondary border-white/[0.06]'
-              }`}
-            >
-              {id}
-            </button>
-          ))}
+    <div className="min-h-screen bg-[#E8EAED] flex items-center justify-center p-4">
+      <div className="relative w-[390px] h-[844px] bg-white rounded-[44px] border-[3px] border-[#D2D5DA] shadow-gpay-lg overflow-hidden flex flex-col">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[126px] h-[34px] bg-black rounded-b-[18px] z-50" />
+        <StatusBar />
+        <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide relative bg-white">
+          <PhoneContent />
         </div>
-        <span className="text-xs text-text-tertiary">
-          {health ? `API connected · ${health.personas_loaded} personas` : useFixtures ? 'Using fixtures' : 'Connecting...'}
-        </span>
-      </header>
-
-      <div className="grid grid-cols-3 gap-6">
-        {/* LEFT — Gauge */}
-        <div className="bg-card rounded-card border border-white/[0.06] p-5 flex flex-col items-center">
-          <p className="text-text-secondary text-sm mb-4">Risk Score</p>
-          <p className={`text-[44px] font-bold tabular-nums ${bandColor[band]}`}>
-            {riskScore}
-          </p>
-          <p className={`text-sm font-medium ${bandColor[band]}`}>{band}</p>
-        </div>
-
-        {/* CENTER — Trajectory placeholder */}
-        <div className="bg-card rounded-card border border-white/[0.06] p-5">
-          <p className="text-text-secondary text-sm mb-2">Trajectory</p>
-          <p className="text-text-tertiary text-xs">Chart renders in Phase 4</p>
-        </div>
-
-        {/* RIGHT — SHAP placeholder */}
-        <div className="bg-card rounded-card border border-white/[0.06] p-5">
-          <p className="text-text-secondary text-sm mb-2">Why Am I At Risk?</p>
-          {useFixtures && fixtureC.shap.items.map((item) => (
-            <div key={item.feature} className="flex justify-between text-xs py-1">
-              <span className="text-text-primary">{item.display_name}</span>
-              <span className={item.direction === '+' ? 'text-risk-high' : 'text-risk-low'}>
-                {item.direction === '+' ? '+' : '−'}{Math.abs(item.shap).toFixed(2)}
-              </span>
-            </div>
-          ))}
+        {nudgeVisible && <NudgeBanner />}
+        {NAV_SCREENS.has(screen) && <BottomNav />}
+        <div className="flex justify-center pb-2 pt-1 bg-white">
+          <div className="w-[134px] h-[5px] bg-black/10 rounded-full" />
         </div>
       </div>
-
-      <footer className="mt-8 text-center text-xs text-text-tertiary">
-        Every feature is a ratio or a trend. No merchant names, no identity, no raw transactions cross the aggregation boundary.
-      </footer>
     </div>
   );
 }
