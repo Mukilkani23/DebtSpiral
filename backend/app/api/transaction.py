@@ -12,12 +12,8 @@ from ..services import explain as shap_engine
 from ..services.loop_detector import evaluate as loop_evaluate, find_spiral_month
 from ..services.rules import evaluate as rules_evaluate
 from ..services.notify import send as notify_send
+from ..services import tier_config_store
 from .score import _band
-
-CATEGORY_TIER = {
-    "food_delivery": 3, "shopping": 3, "entertainment": 3,
-    "travel": 2, "electronics": 2, "subscription": 2, "other": 2,
-}
 
 router = APIRouter()
 
@@ -49,7 +45,7 @@ def process_transaction(req: TransactionRequest, background_tasks: BackgroundTas
     model = scoring.get_booster()
     shap_data = shap_engine.explain(feats_after, model)
 
-    tier = CATEGORY_TIER.get(req.category.value, 2)
+    tier = tier_config_store.get_tier(req.category.value)
 
     budget_spent = last_snap["discretionary_spend_inr"] - req.amount_inr
     budget_limit = persona.monthly_income_inr * 0.30

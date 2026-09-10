@@ -193,3 +193,43 @@ class PersonaDetailResponse(BaseModel):
     persona: Persona
     assessment: RiskAssessment
     shap: Optional[ShapExplanation] = None
+
+
+# --- Demo account / tier-config / allocation (v5 extension, additive only) ---
+
+class AllocationItem(BaseModel):
+    tier: int = Field(ge=1, le=3)
+    amount: float
+    reason: str
+
+
+class AllocationResult(BaseModel):
+    extra_amount: float
+    allocation: list[AllocationItem]
+    priority_order: list[int] = [1, 2, 3]
+    suggestion: str
+
+
+class DemoAccountResponse(BaseModel):
+    persona_id: str
+    balance_inr: float
+    allocated: dict[str, float]
+    last_allocation: Optional[AllocationResult] = None
+
+
+class AccountAdjustRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+    persona_id: str
+    amount: float
+    reason: str = "demo_credit"
+
+
+class TierConfigResponse(BaseModel):
+    category_tiers: dict[str, int]
+    extra_funds_ratios: dict[str, float]
+
+
+class TierConfigUpdateRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+    category_tiers: Optional[dict[str, int]] = None
+    extra_funds_ratios: Optional[dict[str, float]] = None

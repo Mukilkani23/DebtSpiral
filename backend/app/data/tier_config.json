@@ -1,0 +1,16 @@
+{
+  "category_tiers": {
+    "food_delivery": 3,
+    "shopping": 3,
+    "entertainment": 3,
+    "travel": 2,
+    "electronics": 2,
+    "subscription": 2,
+    "other": 2
+  },
+  "extra_funds_ratios": {
+    "1": 0.6,
+    "2": 0.3,
+    "3": 0.1
+  }
+}

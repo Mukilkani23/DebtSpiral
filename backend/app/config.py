@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173"
     model_path: str = "backend/models/xgb_spiral.joblib"
     personas_path: str = "backend/app/data/personas.json"
+    tier_config_path: str = "backend/app/data/tier_config.json"
     random_seed: int = 42
 
     def resolve_path(self, rel_path: str) -> Path:
