@@ -245,6 +245,146 @@ Response:
 
 ---
 
+---
+
+## v5 Extension — Demo Account, Tier Config, Extra-Funds Allocation
+
+> Added after the v4 freeze. Existing sections above are unchanged.
+> This section documents new, additive endpoints only.
+
+### DemoAccountResponse
+
+```json
+{
+  "persona_id": "C",
+  "balance_inr": 10400.0,
+  "allocated": { "tier_1": 3250.0, "tier_2": 1500.0, "tier_3": 250.0 },
+  "last_allocation": {
+    "extra_amount": 5000.0,
+    "allocation": [
+      { "tier": 1, "amount": 3250.0, "reason": "..." },
+      { "tier": 2, "amount": 1500.0, "reason": "..." },
+      { "tier": 3, "amount": 250.0, "reason": "..." }
+    ],
+    "priority_order": [1, 2, 3],
+    "suggestion": "..."
+  }
+}
+```
+
+`balance_inr` is server-authoritative. Initial balance is derived from the
+persona's last month (`income - essential_spend - discretionary_spend - repayment`,
+floored at 0) — not invented. `last_allocation` is `null` until a positive
+adjustment has been made.
+
+### GET /admin/account?persona_id={id}
+
+Returns the demo account for the given persona. 404 if the persona is unknown.
+
+> Deviation from the original feature request text: the request named this
+> `GET /admin/account` with no id, implying a server-side "currently selected
+> persona." No such concept exists anywhere else in this codebase (personas
+> are stateless, addressed by id everywhere else — `GET /personas/{id}`,
+> `POST /score`, `POST /transaction`, etc.). Introducing global "current
+> user" state would be a new abstraction not used anywhere else in the
+> project. `persona_id` is a required query param instead, consistent with
+> the rest of the API.
+
+### POST /admin/account/adjust
+
+Request:
+```json
+{ "persona_id": "C", "amount": 5000, "reason": "demo_credit" }
+```
+
+`amount` may be negative (demo debit). A negative `amount` that would drop
+`balance_inr` below 0 returns `400`. Unknown `persona_id` returns `404`.
+
+Response: `DemoAccountResponse`.
+
+If `amount > 0`, the backend also:
+1. Computes the current risk assessment for the persona (existing `/score` logic).
+2. Runs the allocation engine (`extra_funds_ratios` from tier config, conservative
+   shift applied if `spiral_detected` or `band` is `ELEVATED`/`HIGH`).
+3. Records the result as `last_allocation` and adds it to `allocated`.
+4. Fires a non-blocking notification via the existing NotificationAdapter
+   (`services/notify.py` — same Twilio/fallback path as transaction nudges).
+   Delivery failure never fails the HTTP response.
+
+If `amount <= 0`, no allocation is computed and `last_allocation` is left
+unchanged from its prior value.
+
+> Deviation: this endpoint does NOT push the credit through the simulator to
+> mutate persona history / re-score the risk model. The simulator's
+> `step_month` has no concept of a windfall deposit distinct from spending —
+> forcing one through would mean inventing simulator semantics not used
+> anywhere else. The account ledger is intentionally a separate "demo wallet"
+> from the risk-model input data (`persona.history`). The response includes
+> the account's current allocation, computed against the persona's *existing*
+> risk assessment — it does not claim the credit itself changed the risk
+> score. Deeper simulator integration is a follow-up, not done in this pass.
+
+### TierConfigResponse
+
+```json
+{
+  "category_tiers": {
+    "food_delivery": 3, "shopping": 3, "entertainment": 3,
+    "travel": 2, "electronics": 2, "subscription": 2, "other": 2
+  },
+  "extra_funds_ratios": { "1": 0.6, "2": 0.3, "3": 0.1 }
+}
+```
+
+### GET /config/tiers
+
+Returns the current tier configuration.
+
+### POST /config/tiers
+
+Request (either or both fields, partial update):
+```json
+{
+  "category_tiers": { "shopping": 2 },
+  "extra_funds_ratios": { "1": 0.5, "2": 0.3, "3": 0.2 }
+}
+```
+
+Validation: each tier must be `1|2|3` (400 otherwise); `extra_funds_ratios`
+values must sum to `1.0 ± 0.01` (400 otherwise). Response: `TierConfigResponse`.
+
+Changing `category_tiers` immediately affects the next `/transaction` call's
+tier lookup (the rule engine's `TIER_2` reason code and severity gating).
+Changing `extra_funds_ratios` immediately affects the next
+`/admin/account/adjust` allocation.
+
+> Deviation: unlike the literal spec text ("Persist to tier_config.json"),
+> `POST /config/tiers` mutates an **in-memory** working copy only — it does
+> not rewrite the seed JSON file on disk. This matches the existing
+> `session_store.py` pattern: `personas.json` is read once as seed data and
+> is never rewritten by runtime mutations; `POST /reset` restores from an
+> in-memory baseline, not by re-reading the file. Rewriting the checked-in
+> seed file on every demo session would dirty the repository on every test
+> run and every demo click. `tier_config_store.py` follows the same
+> load-once / in-memory-mutate / reset-from-baseline pattern.
+
+### POST /reset (extended)
+
+In addition to the existing behavior (restore personas, clear notification
+dedup), `/reset` now also restores all demo account balances to their
+initial (persona-derived) values and restores tier config to its seed
+defaults. No new reset endpoint was added — this reuses the existing one,
+per project rules against redundant reset systems.
+
+### Notification: EXTRA_FUNDS_ALLOCATION_SUGGESTION
+
+Fired as a non-blocking `BackgroundTask` via the existing
+`services/notify.send()` — the same adapter and Twilio/fallback path used
+by transaction nudges. No second notification system was introduced. The
+message explicitly states it is a recommendation, not a completed payment.
+
+---
+
 ## Module Boundaries
 
 - `api/*` may only import `services/*` and `schemas`

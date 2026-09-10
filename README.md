@@ -86,6 +86,12 @@ python -m backend.ml.train               # XGBoost + isotonic calibration
 python -m backend.ml.evaluate            # lead time + FP analysis
 ```
 
+### Run backend tests
+
+```bash
+python -m pytest backend/tests/ -v
+```
+
 ### API Endpoints
 
 | Method | Endpoint | Description |
@@ -96,7 +102,14 @@ python -m backend.ml.evaluate            # lead time + FP analysis
 | POST | `/score` | Compute risk score for a persona |
 | POST | `/transaction` | Process transaction, flag if risky, generate nudge |
 | POST | `/project` | Project debt scenarios (do nothing vs change behavior) |
-| POST | `/reset` | Reset all personas to initial state |
+| POST | `/reset` | Reset all personas, demo accounts, and tier config to initial state |
+| GET | `/admin/account?persona_id={id}` | Demo account balance + last allocation for a persona |
+| POST | `/admin/account/adjust` | Add/reduce demo balance; positive amounts trigger tier-aware allocation + notification |
+| GET | `/config/tiers` | Current category-tier map + extra-funds allocation ratios |
+| POST | `/config/tiers` | Update category tiers and/or allocation ratios (in-memory, restored on reset) |
+
+See [CONTRACTS.md](CONTRACTS.md) for full request/response schemas and the
+"v5 Extension" section for the demo account/tier-config design notes.
 
 ## Tech Stack
 
