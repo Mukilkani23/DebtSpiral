@@ -76,6 +76,9 @@ def adjust_demo_account(req: AccountAdjustRequest, background_tasks: BackgroundT
             twilio_from=settings.twilio_whatsapp_from,
             twilio_to=settings.demo_whatsapp_to,
             timeout=settings.notify_timeout_s,
+            twilio_api_key_sid=settings.twilio_api_key_sid,
+            twilio_api_key_secret=settings.twilio_api_key_secret,
+            twilio_content_sid=settings.twilio_content_sid,
         )
 
     return DemoAccountResponse(**account)

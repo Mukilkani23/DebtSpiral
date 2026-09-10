@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     twilio_enabled: bool = False
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
+    twilio_api_key_sid: str = ""
+    twilio_api_key_secret: str = ""
+    twilio_content_sid: str = ""
     twilio_whatsapp_from: str = "whatsapp:+14155238886"
     demo_whatsapp_to: str = "whatsapp:+919629528495"
     notify_timeout_s: float = 3.0
