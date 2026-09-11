@@ -55,6 +55,12 @@ export interface PayError {
   shortfall_inr: number;
 }
 
+// Explicit discriminator — never inferred from "is payError null?". A null
+// payError used to be silently treated as "insufficient balance" with a
+// guessed shortfall, which is how a network/server error ended up showing
+// "Insufficient balance — shortfall ₹0" instead of the real problem.
+export type PayFailureReason = 'insufficient_balance' | 'unreachable' | null;
+
 export type PayButtonState = 'safe' | 'warning' | 'flagged';
 
 interface SessionState {
@@ -107,6 +113,7 @@ interface SessionState {
   payButtonState: PayButtonState;
   payResult: any | null;
   payError: PayError | null;
+  payFailureReason: PayFailureReason;
   setPayContact: (c: Contact | null) => void;
   setPayAmount: (a: number) => void;
   setPayCategory: (c: string) => void;
@@ -114,6 +121,7 @@ interface SessionState {
   setPayButtonState: (s: PayButtonState) => void;
   setPayResult: (r: any) => void;
   setPayError: (e: PayError | null) => void;
+  setPayFailureReason: (r: PayFailureReason) => void;
   setBankBalance: (b: number) => void;
 
   // Projection
@@ -250,6 +258,7 @@ export const useSession = create<SessionState>((set, get) => ({
   payButtonState: 'safe',
   payResult: null,
   payError: null,
+  payFailureReason: null,
   setPayContact: (c) => set({ payContact: c }),
   setPayAmount: (a) => set({ payAmount: a }),
   setPayCategory: (c) => set({ payCategory: c }),
@@ -257,6 +266,7 @@ export const useSession = create<SessionState>((set, get) => ({
   setPayButtonState: (s) => set({ payButtonState: s }),
   setPayResult: (r) => set({ payResult: r }),
   setPayError: (e) => set({ payError: e }),
+  setPayFailureReason: (r) => set({ payFailureReason: r }),
   setBankBalance: (b) => set({ bankBalance: b }),
 
   projection: null,
@@ -311,6 +321,7 @@ export const useSession = create<SessionState>((set, get) => ({
       // (SettingsScreen's handleReset) after /reset completes server-side.
       payResult: null,
       payError: null,
+      payFailureReason: null,
       payButtonState: 'safe',
       personaHistory: [],
       projection: null,

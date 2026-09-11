@@ -6,16 +6,16 @@ export default function PayFailedScreen() {
   const payContact = useSession((s) => s.payContact);
   const payAmount = useSession((s) => s.payAmount);
   const payError = useSession((s) => s.payError);
-  const bankBalance = useSession((s) => s.bankBalance);
+  const payFailureReason = useSession((s) => s.payFailureReason);
   const setScreen = useSession((s) => s.setScreen);
   const setPayError = useSession((s) => s.setPayError);
+  const setPayFailureReason = useSession((s) => s.setPayFailureReason);
 
-  const available = payError?.available_balance_inr ?? bankBalance;
-  const requested = payError?.requested_amount_inr ?? payAmount;
-  const shortfall = payError?.shortfall_inr ?? Math.max(requested - available, 0);
+  const isInsufficientBalance = payFailureReason === 'insufficient_balance' && payError !== null;
 
   const handleClose = () => {
     setPayError(null);
+    setPayFailureReason(null);
     setScreen('home');
   };
 
@@ -26,27 +26,38 @@ export default function PayFailedScreen() {
       </div>
 
       <p className="text-[16px] font-semibold text-risk-high">Payment Failed</p>
-      <p className="text-[13px] text-text-secondary mt-1">Insufficient balance</p>
+      <p className="text-[13px] text-text-secondary mt-1">
+        {isInsufficientBalance ? 'Insufficient balance' : 'Unable to reach the server'}
+      </p>
 
-      <p className="text-[32px] font-bold text-text-primary mt-2 tabular-nums">{'₹'}{fmt(requested)}</p>
+      <p className="text-[32px] font-bold text-text-primary mt-2 tabular-nums">{'₹'}{fmt(payAmount)}</p>
       <p className="text-[13px] text-text-secondary mt-1">to {payContact?.name || 'recipient'}</p>
 
       <div className="w-full mt-6 space-y-3">
-        <div className="bg-red-50 rounded-xl border border-red-200 p-4 space-y-2">
-          <div className="flex justify-between text-[12px]">
-            <span className="text-text-secondary">Available balance</span>
-            <span className="text-text-primary font-semibold">{'₹'}{fmt(available)}</span>
+        {isInsufficientBalance ? (
+          <div className="bg-red-50 rounded-xl border border-red-200 p-4 space-y-2">
+            <div className="flex justify-between text-[12px]">
+              <span className="text-text-secondary">Available balance</span>
+              <span className="text-text-primary font-semibold">{'₹'}{fmt(payError!.available_balance_inr)}</span>
+            </div>
+            <div className="flex justify-between text-[12px]">
+              <span className="text-text-secondary">Attempted</span>
+              <span className="text-text-primary font-semibold">{'₹'}{fmt(payError!.requested_amount_inr)}</span>
+            </div>
+            <div className="border-t border-red-200 my-1" />
+            <div className="flex justify-between text-[12px]">
+              <span className="text-risk-high font-semibold">Shortfall</span>
+              <span className="text-risk-high font-bold">{'₹'}{fmt(payError!.shortfall_inr)}</span>
+            </div>
           </div>
-          <div className="flex justify-between text-[12px]">
-            <span className="text-text-secondary">Attempted</span>
-            <span className="text-text-primary font-semibold">{'₹'}{fmt(requested)}</span>
+        ) : (
+          <div className="bg-red-50 rounded-xl border border-red-200 p-4">
+            <p className="text-[12px] text-text-secondary">
+              We couldn't reach the server to verify your balance, so this payment could not be
+              authorized. No amount was deducted.
+            </p>
           </div>
-          <div className="border-t border-red-200 my-1" />
-          <div className="flex justify-between text-[12px]">
-            <span className="text-risk-high font-semibold">Shortfall</span>
-            <span className="text-risk-high font-bold">{'₹'}{fmt(shortfall)}</span>
-          </div>
-        </div>
+        )}
 
         <p className="text-[12px] text-text-secondary text-center px-2">
           Your payment was not completed. No amount was deducted from your account.

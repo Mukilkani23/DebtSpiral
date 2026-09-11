@@ -20,6 +20,7 @@ export default function PayConfirmScreen() {
   const updateRisk = useSession((s) => s.updateRisk);
   const setPayResult = useSession((s) => s.setPayResult);
   const setPayError = useSession((s) => s.setPayError);
+  const setPayFailureReason = useSession((s) => s.setPayFailureReason);
   const setBankBalance = useSession((s) => s.setBankBalance);
   const setLoading = useSession((s) => s.setLoading);
   const setPayButtonState = useSession((s) => s.setPayButtonState);
@@ -51,11 +52,15 @@ export default function PayConfirmScreen() {
     setSubmitted(true);
     setLoading('txn', true);
     setPayError(null);
+    setPayFailureReason(null);
 
     if (!apiConnected) {
       // Server is authoritative for affordability — without it reachable,
-      // we cannot approve a payment. Never fabricate a local decision.
+      // we cannot approve a payment, and we must NOT claim the balance was
+      // insufficient (that would be fabricating a decision we can't back
+      // with a real number). This is a distinct, explicit failure reason.
       setPayError(null);
+      setPayFailureReason('unreachable');
       setLoading('txn', false);
       setScreen('pay-failed');
       return;
@@ -104,8 +109,13 @@ export default function PayConfirmScreen() {
           available_balance_inr: err.body.available_balance_inr,
           shortfall_inr: err.body.shortfall_inr,
         });
+        setPayFailureReason('insufficient_balance');
       } else {
+        // Any other failure (network error, unexpected 4xx/5xx, timeout) is
+        // NOT insufficient balance — we have no verified balance/shortfall
+        // to show, so don't invent one.
         setPayError(null);
+        setPayFailureReason('unreachable');
       }
       setScreen('pay-failed');
     }
