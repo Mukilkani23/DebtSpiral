@@ -1,0 +1,186 @@
+====================================================================
+  DebtSpiral — Project Status & Roadmap
+  Generated: 2026-09-11
+====================================================================
+
+WHAT IS DEBTSPIRAL?
+-------------------
+An early-warning system that detects emerging debt spirals using
+trajectory analysis (trends & ratios), not static thresholds.
+Built for a hackathon. 100% synthetic data — no PII.
+
+
+CURRENT STATUS: FUNCTIONAL END-TO-END
+--------------------------------------
+All layers are built, connected, and tested.
+
+  [DONE] ML Pipeline
+    - Synthetic dataset: 800 users x 12 months, 8 cohorts
+    - 16 engineered features with trailing windows
+    - Forward-window labeling (t+1..t+3)
+    - XGBoost model + isotonic calibration
+    - Metrics: AUC 0.8267 | PR-AUC 0.6097 | Brier 0.1401
+    - Median lead time: 2.0 months
+    - FP rate on recovering users: 4.6%
+
+  [DONE] Backend Services (FastAPI)
+    - scoring.py     — loads XGBoost + calibrator, returns risk 0-100
+    - explain.py     — SHAP TreeExplainer, top 6 features
+    - rules.py       — 8 reason codes, severity-weighted flagging
+    - projection.py  — Scenario A vs B over 3/6/12 months
+    - notify.py      — Twilio WhatsApp + fallback, deduplication
+    - features.py    — 16 features with as_of cutoff
+    - loop_detector   — 3-condition deterministic spiral detection
+    - simulator.py   — shared month-stepper for projections
+    - session_store   — in-memory persona store
+
+  [DONE] API Endpoints
+    GET  /health           — model status, persona count, uptime
+    GET  /personas          — all personas with real risk scores
+    GET  /personas/{id}     — detail + SHAP + assessment
+    POST /score             — compute risk for a persona
+    POST /transaction       — process txn, flag, generate nudge
+    POST /project           — project debt scenarios
+    POST /reset             — reset personas to initial state
+
+  [DONE] Frontend (React + Vite + Tailwind)
+    - GPay-inspired light theme, phone mockup frame
+    - 10 screens, 7 components
+    - Connected to real backend API
+    - Real risk scores, SHAP charts, debt trajectory
+    - Live what-if projections from /project endpoint
+    - Payment flow with real flagging + nudge banners
+    - Persona switching with API reload
+    - Reset calls backend /reset
+
+  [DONE] Frontend-Backend Integration
+    - App loads persona data from API on startup
+    - DebtSpiral screen shows real SHAP + trajectory
+    - Transaction flow calls /transaction endpoint
+    - What-if slider debounces API calls to /project
+
+
+5 DEMO PERSONAS
+----------------
+  A — Steady Eddie        (LOW risk, stable)
+  B — High Roller          (HIGH risk despite high income)
+  C — Rising Pressure      (LIVE, golden-path demo persona)
+  D — Variable Income      (gig worker, moderate risk)
+  E — Recovering           (high debt but improving)
+
+
+GOLDEN DEMO FLOW
+-----------------
+  1. Open app -> Home shows Persona C, risk score from model
+  2. Tap DebtSpiral -> See SHAP explanation + debt trajectory
+  3. Move What-If slider -> See projected debt reduction
+  4. Go Home -> Tap Swiggy -> Enter Rs 2,000
+  5. Confirm -> See flagged payment with 4 reason codes
+  6. See nudge: "Home-cooked meal, ~Rs 250 — Rs 1,750 saved"
+  7. Tap "View DebtSpiral" -> See updated SHAP after transaction
+
+
+====================================================================
+  FEATURES TO ADD / IMPROVE
+====================================================================
+
+HIGH PRIORITY (Hackathon Impact)
+---------------------------------
+
+1. IMPROVE PERSONA C RISK SCORE
+   The model gives Persona C a score of 5 (LOW) even though the loop
+   detector confirms a spiral at month 4. The model was trained on
+   synthetic data with different distributions. Options:
+   - Retrain with adjusted class weights or threshold
+   - Adjust Persona C's history to trigger higher model scores
+   - Use a blended score: model + loop detector combined
+   This is the #1 issue for demo credibility.
+
+2. ADD LOADING STATES & ERROR HANDLING
+   - Show skeleton/spinner while API calls are in flight
+   - Show error toast if backend is unreachable
+   - Graceful degradation to stub data when offline
+
+3. HISTORICAL RISK SCORES IN TRAJECTORY CHART
+   Currently the trajectory chart shows debt bars (from history).
+   Better: compute risk score at each month (call /score with
+   as_of_month for each month) and show both debt + risk curves.
+
+4. COST OF NEXT DECISION DISPLAY
+   The /project endpoint returns cost_of_next_decision but the
+   frontend doesn't display it yet. Add a card showing:
+   "Your next Rs X discretionary purchase costs Rs Y in extra
+   debt over 12 months."
+
+5. NOTIFICATION DEMO
+   Wire up Twilio WhatsApp sandbox so the nudge actually sends
+   a WhatsApp message during the demo. Just needs .env config:
+   TWILIO_ENABLED=true, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN,
+   DEMO_WHATSAPP_TO.
+
+
+MEDIUM PRIORITY (Polish)
+-------------------------
+
+6. DARK MODE SUPPORT
+   Frontend uses Tailwind tokens but only has light theme.
+   Add dark mode toggle in Settings.
+
+7. MULTI-TRANSACTION DEMO
+   Allow multiple transactions in sequence without reset.
+   Show how risk accumulates across a spending session.
+
+8. PERSONA COMPARISON VIEW
+   Side-by-side comparison of two personas' risk profiles.
+   Good for showing "direction beats magnitude" (E vs B).
+
+9. ANIMATED TRANSITIONS
+   Screen transitions are instant. Add slide animations
+   between screens for a more polished mobile feel.
+
+10. PROJECTION CHART VISUALIZATION
+    Replace the simple bar comparison with a line chart showing
+    debt trajectories over 12 months for both scenarios.
+
+
+LOW PRIORITY (Nice to Have)
+-----------------------------
+
+11. EXPORT REPORT
+    Generate a PDF summary of a persona's risk assessment,
+    SHAP explanation, and recommended actions.
+
+12. VOICE NUDGE (ACCESSIBILITY)
+    Use Web Speech API to read nudge messages aloud.
+
+13. CUSTOM PERSONA BUILDER
+    Let demo users create their own persona with custom income,
+    spending, and debt parameters.
+
+14. UNIT TESTS
+    Add pytest tests for backend services and API routes.
+    Add Vitest tests for frontend store and components.
+
+15. CI/CD PIPELINE
+    GitHub Actions workflow: lint, type-check, test, build.
+
+
+TECH DEBT
+----------
+- Multiple Python versions on system (3.11, 3.14) — standardize
+- No requirements.txt or pyproject.toml for Python deps
+- Frontend has no TypeScript strict mode
+- No API rate limiting or authentication (demo only)
+- session_store is in-memory (resets on server restart)
+
+
+====================================================================
+  TECH STACK
+====================================================================
+  Backend:   FastAPI + Pydantic v2 + uvicorn
+  ML:        XGBoost + sklearn + SHAP
+  Frontend:  React 18 + TypeScript + Vite 5 + Tailwind 3 + Zustand 4
+  Notify:    Twilio WhatsApp Sandbox (optional)
+  Data:      100% synthetic, no PII
+
+====================================================================
