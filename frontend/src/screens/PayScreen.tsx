@@ -5,18 +5,22 @@ import BackHeader from '../components/BackHeader';
 function fmt(n: number) { return n.toLocaleString('en-IN'); }
 
 export default function PayScreen() {
+  const screen = useSession((s) => s.screen);
   const contacts = useSession((s) => s.contacts);
   const expenses = useSession((s) => s.expenses);
+  const payContact = useSession((s) => s.payContact);
+  const payCategory = useSession((s) => s.payCategory);
+  const payTier = useSession((s) => s.payTier);
   const setScreen = useSession((s) => s.setScreen);
   const setPayContact = useSession((s) => s.setPayContact);
   const setPayAmount = useSession((s) => s.setPayAmount);
   const setPayCategory = useSession((s) => s.setPayCategory);
   const setPayTier = useSession((s) => s.setPayTier);
   const [search, setSearch] = useState('');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(screen === 'contact-pay' ? payContact?.id || null : null);
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('');
-  const [tier, setTier] = useState<TierLevel>(3);
+  const [category, setCategory] = useState(screen === 'contact-pay' ? payCategory : '');
+  const [tier, setTier] = useState<TierLevel>(screen === 'contact-pay' ? payTier : 3);
 
   const filtered = search
     ? contacts.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))

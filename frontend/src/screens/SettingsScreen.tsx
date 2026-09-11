@@ -31,6 +31,7 @@ export default function SettingsScreen() {
   const setScreen = useSession((s) => s.setScreen);
   const resetDemo = useSession((s) => s.resetDemo);
   const loadFromApi = useSession((s) => s.loadFromApi);
+  const setBankBalance = useSession((s) => s.setBankBalance);
   const apiConnected = useSession((s) => s.apiConnected);
   const [personas, setPersonas] = useState<PersonaInfo[]>(FALLBACK_PERSONAS);
 
@@ -52,8 +53,12 @@ export default function SettingsScreen() {
     if (apiConnected) {
       try {
         await api.reset();
-        const detail = await api.getPersona(personaId);
+        const [detail, account] = await Promise.all([
+          api.getPersona(personaId),
+          api.getAccount(personaId),
+        ]);
         loadFromApi(detail, null);
+        setBankBalance(account.balance_inr);
       } catch {}
     }
   };
