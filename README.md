@@ -1,8 +1,11 @@
 # DebtSpiral — Early Detection of Debt Spirals
 
-An early-warning system that distinguishes temporary financial setbacks from emerging debt spirals, using trajectory analysis rather than static thresholds.
+An early-warning system that distinguishes temporary financial setbacks from
+emerging debt spirals, using trajectory analysis rather than static
+thresholds.
 
-**100% synthetic data. No PII, no account numbers, no merchant strings, no real financial data.**
+**100% synthetic data. No PII, no account numbers, no merchant strings, no
+real financial data.**
 
 ## Architecture
 
@@ -21,9 +24,27 @@ Raw txns → [Aggregation boundary] → Features (ratios & trends only)
                               Risk Assessment + Nudge
 ```
 
-**Privacy by construction:** every feature is a ratio or a trend. The model never needs to know where you shopped, only that the category was discretionary. No identifiable information crosses the aggregation boundary.
+**Privacy by construction:** every feature is a ratio or a trend. The model
+never needs to know where you shopped, only that the category was
+discretionary. No identifiable information crosses the aggregation boundary.
 
 **Autonomy:** we inform, we never block.
+
+## Project Structure
+
+```
+DebtSpiral/
+├── backend/
+│   ├── app/            # FastAPI application (api, services, schemas, config)
+│   ├── models/         # Trained XGBoost model artifacts
+│   └── tests/          # pytest suite
+├── ml/                 # Dataset generation, feature/label pipeline, training
+├── frontend/           # React + TypeScript + Vite app
+├── data/               # Generated datasets (gitignored: raw/ and processed/)
+├── scripts/            # Utility scripts
+├── CONTRACTS.md         # API request/response schemas
+└── .env                # Local secrets (gitignored — see Setup below)
+```
 
 ## Quick Start
 
@@ -35,7 +56,7 @@ Raw txns → [Aggregation boundary] → Features (ratios & trends only)
 ### 1. Install Python dependencies
 
 ```bash
-pip install fastapi uvicorn pydantic-settings xgboost scikit-learn shap joblib numpy
+pip install -r backend/requirements.txt
 ```
 
 ### 2. Install frontend dependencies
@@ -46,7 +67,19 @@ npm install
 cd ..
 ```
 
-### 3. Start the backend (Terminal 1)
+### 3. Configure environment
+
+Copy the example file and fill in values as needed:
+
+```bash
+cp .env.example .env
+```
+
+The app runs fine with the defaults — Twilio notifications are disabled
+out of the box. See [Twilio WhatsApp notifications](#optional-twilio-whatsapp-notifications)
+to enable them.
+
+### 4. Start the backend (Terminal 1)
 
 ```bash
 python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
@@ -54,27 +87,43 @@ python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 
 The API loads the trained XGBoost model and 5 demo personas at startup.
 
-### 4. Start the frontend (Terminal 2)
+### 5. Start the frontend (Terminal 2)
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-### 5. Open in browser
+### 6. Open in browser
 
 Go to **http://localhost:5173**
 
 ### Optional: Twilio WhatsApp notifications
 
-Create a `.env` file in the project root:
+Set the following in your `.env` file (see `.env.example` for the full list):
 
 ```env
 TWILIO_ENABLED=true
-TWILIO_ACCOUNT_SID=your_sid
-TWILIO_AUTH_TOKEN=your_token
+TWILIO_ACCOUNT_SID=your_account_sid
+TWILIO_AUTH_TOKEN=your_auth_token
+TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
 DEMO_WHATSAPP_TO=whatsapp:+91XXXXXXXXXX
 ```
+
+You can authenticate with either the Account Auth Token **or** a Twilio API
+Key (recommended — scoped and revocable independently of the account-level
+token):
+
+```env
+TWILIO_API_KEY_SID=SKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+TWILIO_API_KEY_SECRET=your_api_key_secret
+```
+
+If both an API Key and an Auth Token are set, the API Key takes priority.
+
+> **Never commit `.env`.** It is already listed in `.gitignore`. If you ever
+> paste credentials into a chat, ticket, or doc, treat them as compromised
+> and rotate them in the [Twilio Console](https://console.twilio.com).
 
 ### Optional: Re-run the ML pipeline from scratch
 
@@ -92,7 +141,7 @@ python -m backend.ml.evaluate            # lead time + FP analysis
 python -m pytest backend/tests/ -v
 ```
 
-### API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -121,7 +170,7 @@ See [CONTRACTS.md](CONTRACTS.md) for full request/response schemas and the
 | Frontend | React 18 + TypeScript + Vite |
 | Styling | Tailwind CSS |
 | Charts | Recharts |
-| Notifications | Twilio WhatsApp Sandbox (optional) |
+| Notifications | Twilio WhatsApp (sandbox or approved sender) |
 
 ### Transaction Balance Protection
 
